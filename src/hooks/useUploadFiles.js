@@ -11,6 +11,11 @@ const useUploadFiles = () => {
   const [user] = useAuthState(auth);
   const [loading, setLoading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [inputs, setInputs] = useState({
+    name: '',
+    key: '',
+    bpm: ''
+  });
 
   const uploadAudio = async () => {
     if (!audioUpload) {
@@ -32,6 +37,10 @@ const useUploadFiles = () => {
       // Get the download URL of the uploaded file
       const downloadURL = await getDownloadURL(snapshot.ref);
 
+    if (!inputs.name || !inputs.key || !inputs.bpm) {
+        setUploadError('Please fill in all fields.');
+        return;
+    }
       // Create a post object with additional fields
       const post = {
         userId: user.uid,
@@ -39,8 +48,9 @@ const useUploadFiles = () => {
         createdAt: serverTimestamp(),
         likes: 0,
         comments: [],
-        bpm: 0,
-        key: '',
+        bpm: inputs.bpm,
+        key: inputs.key,
+        name: inputs.name
       };
 
       // Save the post object in Firestore under the "posts" collection
@@ -59,7 +69,9 @@ const useUploadFiles = () => {
     setAudioUpload,
     loading,
     uploadError,
-    uploadAudio
+    uploadAudio,
+    setInputs,
+    inputs
   };
 }
 

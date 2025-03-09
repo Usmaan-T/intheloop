@@ -1,7 +1,7 @@
-import React from 'react';
-import { Box, Input, Button, VStack, Text } from '@chakra-ui/react';
-import NavBar from '../../components/Navbar/NavBar';
-import useUploadFiles from '../../hooks/useUploadFiles';
+import React from "react";
+import { Box, Input, Button, VStack, Text } from "@chakra-ui/react";
+import NavBar from "../../components/Navbar/NavBar";
+import useUploadFiles from "../../hooks/useUploadFiles";
 
 const Upload = () => {
   const {
@@ -11,6 +11,8 @@ const Upload = () => {
     uploadError,
     downloadURL,
     uploadAudio,
+    setInputs,
+    inputs
   } = useUploadFiles();
 
   return (
@@ -24,6 +26,24 @@ const Upload = () => {
             onChange={(e) => setAudioUpload(e.target.files[0])}
             bg="white"
             color="black"
+          />
+          <Input
+            type="text"
+            value={inputs.name}
+            placeholder="Name"
+            onChange={(e) => setInputs({ ...inputs, name: e.target.value })}
+          />
+          <Input
+            type="text"
+            value={inputs.key}
+            placeholder="Key"
+            onChange={(e) => setInputs({ ...inputs, key: e.target.value })}
+          />
+          <Input
+            type="text"
+            value={inputs.bpm}
+            placeholder="BPM"
+            onChange={(e) => setInputs({ ...inputs, bpm: e.target.value })}
           />
           <Button onClick={uploadAudio} colorScheme="red" isLoading={loading}>
             Upload MP3
