@@ -45,7 +45,7 @@ const NavBar = () => {
           <Link href="/samples" fontWeight="medium" _hover={{ textDecoration: 'underline' }}>
             Samples
           </Link>
-          <Link href="/collab" fontWeight="medium" _hover={{ textDecoration: 'underline' }}>
+          <Link href="/upload" fontWeight="medium" _hover={{ textDecoration: 'underline' }}>
             Upload
           </Link>
           <Link href="/tutorials" fontWeight="medium" _hover={{ textDecoration: 'underline' }}>

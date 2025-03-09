@@ -7,6 +7,7 @@ import LogIn from './Pages/Authentication/LogIn'
 import Upload from './Pages/Upload/Upload'
 import { useAuthState } from 'react-firebase-hooks/auth'
 import { auth } from './firebase/firebase'
+import ProfilePage from './Pages/ProfilePage/ProfilePage'
 
 
 const App = () => {
@@ -23,6 +24,7 @@ const App = () => {
       <Route path='/auth' element={<AuthPage/>} />
       <Route path='/login' element={<LogIn />} />
       <Route path='/upload' element={user ? <Upload /> : <Navigate to="/auth" />} />
+      <Route path='/profilepage' element={<ProfilePage />} />
     </Routes>
   )
 }
