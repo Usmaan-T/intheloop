@@ -10,16 +10,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@chakra-ui/icons": "^2.2.4",
     "@chakra-ui/react": "^2.10.6",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "firebase": "^11.4.0",
-    "framer-motion": "^12.4.7",
+    "framer-motion": "^12.4.10",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-dropzone": "^14.3.8",
     "react-firebase-hooks": "^5.1.1",
     "react-icons": "^5.5.0",
-    "react-router-dom": "^7.2.0",
+    "react-router-dom": "^7.3.0",
     "uuid": "^11.1.0",
     "wavesurfer.js": "^7.9.1",
     "zustand": "^5.0.3"
