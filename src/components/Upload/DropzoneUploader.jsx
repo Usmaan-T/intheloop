@@ -137,4 +137,5 @@ const DropzoneUploader = ({ onFileSelected, selectedFile }) => {
   );
 };
 
+// Make sure this export statement is present and properly formatted
 export default DropzoneUploader;

@@ -22,28 +22,47 @@ import {
   VStack,
   HStack,
   useToast,
+  IconButton,
+  Divider,
+  Grid,
+  GridItem,
 } from '@chakra-ui/react';
+import { AddIcon } from '@chakra-ui/icons';
 import { useCollection } from 'react-firebase-hooks/firestore';
-import { collection, query, where, orderBy, doc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { firestore, auth, storage } from '../../firebase/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { updateProfile } from 'firebase/auth';
 import SampleRow from '../../components/Samples/SampleRow';
 import NavBar from '../../components/Navbar/NavBar';
+import CreatePlaylist from '../../components/playlist/CreatePlaylist';
+import Playlist from '../../components/Playlist/Playlist';
 
 const ProfilePage = () => {
+  // 1. AUTH STATE
   const [user, userLoading] = useAuthState(auth);
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // 2. DISCLOSURE HOOKS
+  // Profile edit modal
+  const profileDisclosure = useDisclosure();
+  // Playlist creation modal
+  const playlistDisclosure = useDisclosure();
+  
+  // 3. STATE HOOKS
   const [username, setUsername] = useState('');
   const [bio, setBio] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [imageFile, setImageFile] = useState(null);
-  const fileInputRef = useRef(null);
-  const toast = useToast();
   const [profileData, setProfileData] = useState(null);
   
-  // Fetch user profile data from Firestore
+  // 4. REFS
+  const fileInputRef = useRef(null);
+  
+  // 5. CONTEXT/UTILITIES
+  const toast = useToast();
+  
+  // 6. EFFECTS
   useEffect(() => {
     const fetchProfileData = async () => {
       if (user) {
@@ -60,25 +79,24 @@ const ProfilePage = () => {
     
     fetchProfileData();
   }, [user]);
-
-  // Open modal and initialize form with current values
+  
+  // 7. HANDLERS (outside of render)
   const handleEditClick = () => {
     if (profileData) {
       setUsername(profileData.username || '');
       setBio(profileData.bio || '');
     }
-    onOpen();
+    profileDisclosure.onOpen();
   };
 
-  // Handle file selection
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setImageFile(e.target.files[0]);
     }
   };
 
-  // Upload profile changes
   const handleSaveProfile = async () => {
+    // ...existing profile save logic...
     if (!user) return;
     
     setIsUpdating(true);
@@ -140,7 +158,7 @@ const ProfilePage = () => {
       
       // Reset state and close modal
       setImageFile(null);
-      onClose();
+      profileDisclosure.onClose();
       
       // Force page refresh to show updated profile
       window.location.reload();
@@ -158,6 +176,44 @@ const ProfilePage = () => {
     }
   };
 
+  // FETCH TRACKS - IMPORTANT: Move this query inside effect 
+  // instead of conditionally inside render
+  const [tracks, setTracks] = useState([]);
+  const [tracksLoading, setTracksLoading] = useState(false);
+  const [tracksError, setTracksError] = useState(null);
+  
+  useEffect(() => {
+    if (user) {
+      setTracksLoading(true);
+      const tracksQuery = query(
+        collection(firestore, 'posts'),
+        where('userId', '==', user.uid),
+        orderBy('createdAt', 'desc')
+      );
+      
+      const unsubscribe = onSnapshot(
+        tracksQuery,
+        (snapshot) => {
+          const trackData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setTracks(trackData);
+          setTracksLoading(false);
+        },
+        (error) => {
+          console.error("Error fetching tracks:", error);
+          setTracksError(error);
+          setTracksLoading(false);
+        }
+      );
+      
+      return () => unsubscribe();
+    }
+  }, [user]);
+  
+  // Now we render conditionally using state, not hooks
+  if (userLoading) {
+    return <Text>Loading user data...</Text>;
+  }
+  
   if (!user) {
     return (
       <Container maxW="container.md" py={10}>
@@ -168,20 +224,6 @@ const ProfilePage = () => {
       </Container>
     );
   }
-
-  // Query tracks (posts) where userId equals the current user's UID, ordering by creation time.
-  const tracksQuery = query(
-    collection(firestore, 'posts'),
-    where('userId', '==', user.uid),
-    orderBy('createdAt', 'desc')
-  );
-
-  const [tracksSnapshot, loading, error] = useCollection(tracksQuery);
-
-  if (loading) return <Text>Loading tracks...</Text>;
-  if (error) return <Text>Error: {error.message}</Text>;
-
-  const tracks = tracksSnapshot?.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
   return (
     <>
@@ -210,6 +252,7 @@ const ProfilePage = () => {
                 onClick={handleEditClick}
                 cursor="pointer"
               >
+                
                 <Avatar 
                   size="xl" 
                   src={profileData?.photoURL || user?.photoURL} 
@@ -265,11 +308,90 @@ const ProfilePage = () => {
             </Flex>
           </Box>
 
-          {/* Tracks Section - Existing content */}
+          {/* Playlists Section */}
+          <Box mb={10}>
+            <Flex justify="space-between" align="center" mb={4}>
+              <Heading as="h2" size="xl" color="white">
+                My Playlists
+              </Heading>
+              <IconButton
+                icon={<AddIcon />}
+                colorScheme="purple"
+                borderRadius="full"
+                aria-label="Create new playlist"
+                onClick={playlistDisclosure.onOpen}
+              />
+            </Flex>
+            
+            <Box
+              bg="rgba(20, 20, 30, 0.8)"
+              borderRadius="lg"
+              p={6}
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+            >
+              {/* Grid layout for playlists */}
+              <Grid 
+                templateColumns={{
+                  base: '1fr',              // 1 column on mobile
+                  sm: 'repeat(2, 1fr)',     // 2 columns on small screens
+                  md: 'repeat(3, 1fr)',     // 3 columns on medium screens
+                  lg: 'repeat(4, 1fr)'      // 4 columns on large screens
+                }}
+                gap={4}
+                mb={4}
+              >
+                {/* Example playlists - you can make this dynamic later */}
+                <GridItem>
+                  <Playlist 
+                    name="Workout Mix" 
+                    bio="High energy tracks for intense workouts" 
+                    image="/playlist1.png" 
+                  />
+                </GridItem>
+                <GridItem>
+                  <Playlist 
+                    name="Chill Vibes" 
+                    bio="Relaxing music for downtime" 
+                    image="https://via.placeholder.com/300?text=Chill" 
+                  />
+                </GridItem>
+                <GridItem>
+                  <Playlist 
+                    name="Focus Flow" 
+                    bio="Concentration enhancing tracks" 
+                    image="https://via.placeholder.com/300?text=Focus" 
+                  />
+                </GridItem>
+                <GridItem>
+                  <Playlist 
+                    name="Running Playlist" 
+                    bio="Beats to keep you moving" 
+                    image="https://via.placeholder.com/300?text=Running" 
+                  />
+                </GridItem>
+              </Grid>
+              
+              {/* Message for when no playlists exist - you can conditionally show this */}
+              {/* {playlists.length === 0 && (
+                <Text color="gray.300">
+                  Your playlists will appear here. Click the + button to create a new playlist.
+                </Text>
+              )} */}
+            </Box>
+          </Box>
+
+          <Divider my={8} borderColor="whiteAlpha.300" />
+          
+          {/* Tracks Section */}
           <Heading as="h2" size="xl" mb={6} color={'white'}>
             Most Recent Samples
           </Heading>
-          {tracks.length === 0 ? (
+          {tracksLoading ? (
+            <Text>Loading tracks...</Text>
+          ) : tracksError ? (
+            <Text>Error: {tracksError.message}</Text>
+          ) : tracks.length === 0 ? (
             <Text color="gray.300">You haven't uploaded any tracks yet.</Text>
           ) : (
             <Box
@@ -287,7 +409,7 @@ const ProfilePage = () => {
       </Box>
 
       {/* Edit Profile Modal */}
-      <Modal isOpen={isOpen} onClose={onClose}>
+      <Modal isOpen={profileDisclosure.isOpen} onClose={profileDisclosure.onClose}>
         <ModalOverlay backdropFilter="blur(3px)" />
         <ModalContent bg="gray.900" color="white">
           <ModalHeader>Edit Profile</ModalHeader>
@@ -343,7 +465,7 @@ const ProfilePage = () => {
               
               {/* Submit Button */}
               <HStack justifyContent="flex-end" w="full" pt={2}>
-                <Button variant="outline" mr={3} onClick={onClose}>
+                <Button variant="outline" mr={3} onClick={profileDisclosure.onClose}>
                   Cancel
                 </Button>
                 <Button 
@@ -358,6 +480,12 @@ const ProfilePage = () => {
           </ModalBody>
         </ModalContent>
       </Modal>
+      
+      {/* Create Playlist Modal */}
+      <CreatePlaylist 
+        isOpen={playlistDisclosure.isOpen} 
+        onClose={playlistDisclosure.onClose}
+      />
     </>
   );
 };
