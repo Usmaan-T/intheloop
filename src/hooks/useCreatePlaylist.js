@@ -36,7 +36,8 @@ const useCreatePlaylist = () => {
         colorCode: ['#8A2BE2', '#4A90E2', '#50C878', '#FF6347', '#FFD700'][
           Math.floor(Math.random() * 5)
         ],
-        tracks: []
+        tracks: [],
+        coverImage: null,
       };
 
       // Handle cover image upload if provided

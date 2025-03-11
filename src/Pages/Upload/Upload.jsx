@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Box, 
   Button, 
@@ -15,9 +15,10 @@ import {
   Progress,
   HStack,
   Icon,
-  Flex
+  Flex,
+  Image
 } from '@chakra-ui/react';
-import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck } from 'react-icons/md';
+import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck, MdAddPhotoAlternate } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import useUploadFiles from '../../hooks/useUploadFiles';
@@ -29,6 +30,8 @@ const MotionContainer = motion(Container);
 const UploadPage = () => {
   const toast = useToast();
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [coverImage, setCoverImage] = useState(null);
+  const coverImageRef = useRef(null);
   
   const {
     audioUpload,
@@ -39,6 +42,16 @@ const UploadPage = () => {
     setInputs,
     inputs,
   } = useUploadFiles();
+
+  const handleImageChange = (e) => {
+    if (e.target.files[0]) {
+      setCoverImage(e.target.files[0]);
+      setInputs({
+        ...inputs,
+        coverImage: e.target.files[0]
+      });
+    }
+  };
 
   const handleUpload = async () => {
     if (!audioUpload) {
@@ -157,6 +170,74 @@ const UploadPage = () => {
                   onFileSelected={setAudioUpload}
                   selectedFile={audioUpload}
                 />
+              </FormControl>
+              
+              <FormControl id="coverImage">
+                <FormLabel color="gray.300" fontSize="lg" fontWeight="medium">
+                  Cover Image (Optional)
+                </FormLabel>
+                <Flex 
+                  direction="column" 
+                  align="center" 
+                  justify="center"
+                  bg="whiteAlpha.100"
+                  borderRadius="md"
+                  p={4}
+                  cursor="pointer"
+                  onClick={() => coverImageRef.current?.click()}
+                  borderWidth={1}
+                  borderColor="whiteAlpha.300"
+                  borderStyle="dashed"
+                  transition="all 0.3s"
+                  _hover={{ bg: "whiteAlpha.200" }}
+                  h="150px"
+                  overflow="hidden"
+                  position="relative"
+                >
+                  {coverImage ? (
+                    <>
+                      <Image 
+                        src={URL.createObjectURL(coverImage)}
+                        alt="Cover preview"
+                        objectFit="cover"
+                        borderRadius="md"
+                        position="absolute"
+                        top="0"
+                        left="0"
+                        width="100%"
+                        height="100%"
+                      />
+                      <Box 
+                        position="absolute"
+                        top="0"
+                        left="0"
+                        width="100%"
+                        height="100%"
+                        bg="blackAlpha.600"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        opacity="0"
+                        transition="opacity 0.3s"
+                        _hover={{ opacity: "1" }}
+                      >
+                        <Text color="white" fontWeight="bold">Change Image</Text>
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Icon as={MdAddPhotoAlternate} color="purple.400" fontSize="2xl" mb={2} />
+                      <Text color="gray.300">Click to upload cover image</Text>
+                    </>
+                  )}
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    ref={coverImageRef}
+                    onChange={handleImageChange}
+                  />
+                </Flex>
               </FormControl>
               
               {uploadProgress > 0 && (

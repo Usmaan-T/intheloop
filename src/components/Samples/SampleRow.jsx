@@ -9,19 +9,32 @@ import {
   Icon,
   Tooltip,
   Badge,
+  Image,
 } from '@chakra-ui/react';
 import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { firestore } from '../../firebase/firebase';
 import Waveform from '../Waveform/Waveform';
-import { FaMusic, FaPlus } from 'react-icons/fa';
+import { FaPlus } from 'react-icons/fa';
+import { MdMusicNote } from 'react-icons/md';
+
+// Color generator function
+const generateColorFromName = (name) => {
+  const colors = ['#8A2BE2', '#4A90E2', '#50C878', '#FF6347', '#FFD700'];
+  if (!name) return colors[0];
+  
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) {
+    sum += name.charCodeAt(i);
+  }
+  return colors[sum % colors.length];
+};
 
 const SampleRow = ({ track }) => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const hoverBgColor = useColorModeValue('gray.50', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColorSecondary = useColorModeValue('gray.500', 'gray.400');
-  const artworkBg = useColorModeValue('gray.100', 'gray.700');
 
   // Fetch user details from 'users' collection
   const userDocRef = doc(firestore, 'users', track.userId);
@@ -54,23 +67,45 @@ const SampleRow = ({ track }) => {
       >
         {/* Top section with artwork and track info */}
         <Flex alignItems="center" gap={4} flex="1" minW="250px">
-          {/* Artwork / Placeholder */}
+          {/* Cover Image - Single larger image with proper fallback */}
           <Box
-            w="80px"
-            h="80px"
+            w="100px"
+            h="100px"
             borderRadius="lg"
-            bg={artworkBg}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
             overflow="hidden"
             border="1px solid"
             borderColor={borderColor}
+            position="relative"
           >
-            {track.artworkUrl ? (
-              <img src={track.artworkUrl} alt={track.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {track.coverImage ? (
+              <Image 
+                src={track.coverImage}
+                alt={track.name}
+                w="100%"
+                h="100%"
+                objectFit="cover"
+                fallback={
+                  <Flex
+                    h="100%"
+                    w="100%"
+                    bg={generateColorFromName(track.name)}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Icon as={MdMusicNote} color="white" boxSize={6} />
+                  </Flex>
+                }
+              />
             ) : (
-              <Icon as={FaMusic} boxSize="30px" color={textColorSecondary} />
+              <Flex
+                h="100%"
+                w="100%"
+                bg={generateColorFromName(track.name)}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Icon as={MdMusicNote} color="white" boxSize={8} />
+              </Flex>
             )}
           </Box>
 
