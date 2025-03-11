@@ -16,9 +16,19 @@ import {
   HStack,
   Icon,
   Flex,
-  Image
+  Image,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  SimpleGrid
 } from '@chakra-ui/react';
-import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck, MdAddPhotoAlternate } from 'react-icons/md';
+import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck, MdAddPhotoAlternate, MdTag } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import useUploadFiles from '../../hooks/useUploadFiles';
@@ -27,11 +37,21 @@ import DropzoneUploader from '../../components/Upload/DropzoneUploader';
 const MotionBox = motion(Box);
 const MotionContainer = motion(Container);
 
+// Predefined tags for samples
+const SAMPLE_TAGS = {
+  genre: ['Hip Hop', 'EDM', 'Rock', 'Lo-Fi', 'Trap', 'House', 'Pop', 'RnB', 'Jazz', 'Classical'],
+  mood: ['Energetic', 'Chill', 'Intense', 'Dark', 'Happy', 'Sad', 'Calm', 'Aggressive'],
+  workout: ['Cardio', 'Strength', 'HIIT', 'Yoga', 'Stretching', 'Warm-Up', 'Cool-Down', 'Running'],
+  tempo: ['Slow', 'Medium', 'Fast', 'Variable']
+};
+
 const UploadPage = () => {
   const toast = useToast();
   const [uploadProgress, setUploadProgress] = useState(0);
   const [coverImage, setCoverImage] = useState(null);
   const coverImageRef = useRef(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const MAX_TAGS = 4;
   
   const {
     audioUpload,
@@ -51,6 +71,20 @@ const UploadPage = () => {
         coverImage: e.target.files[0]
       });
     }
+  };
+
+  const handleAddTag = (tag) => {
+    if (selectedTags.length < MAX_TAGS && !selectedTags.includes(tag)) {
+      const newTags = [...selectedTags, tag];
+      setSelectedTags(newTags);
+      setInputs({ ...inputs, tags: newTags });
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    const newTags = selectedTags.filter(t => t !== tag);
+    setSelectedTags(newTags);
+    setInputs({ ...inputs, tags: newTags });
   };
 
   const handleUpload = async () => {
@@ -322,6 +356,152 @@ const UploadPage = () => {
                   </InputGroup>
                 </FormControl>
               </HStack>
+              
+              {/* Add Tags Section */}
+              <FormControl id="tags">
+                <FormLabel color="gray.300" mb={2}>Tags (Max 4)</FormLabel>
+                
+                {/* Display selected tags */}
+                <Wrap spacing={2} mb={3}>
+                  {selectedTags.map(tag => (
+                    <WrapItem key={tag}>
+                      <Tag
+                        size="md"
+                        borderRadius="full"
+                        variant="solid"
+                        colorScheme="purple"
+                      >
+                        <TagLabel>{tag}</TagLabel>
+                        <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                      </Tag>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+                
+                {/* Tag selection UI */}
+                <Box>
+                  <Text color="gray.400" fontSize="sm" mb={2}>
+                    Select tags ({selectedTags.length}/{MAX_TAGS})
+                  </Text>
+                  
+                  <SimpleGrid columns={2} spacing={3}>
+                    {/* Genre Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color={'white'}
+                      >
+                        Genre
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.genre.map(tag => (
+                          <MenuItem 
+                            key={tag}
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Mood Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color='white'
+                      >
+                        Mood
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.mood.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Workout Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                      >
+                        Workout
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.workout.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Tempo Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color={'white'}
+                      >
+                        Tempo
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.tempo.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                  </SimpleGrid>
+                </Box>
+              </FormControl>
               
               <Button 
                 onClick={handleUpload} 

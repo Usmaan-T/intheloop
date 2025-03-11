@@ -10,13 +10,17 @@ import {
   Tooltip,
   Badge,
   Image,
+  Wrap,
+  WrapItem,
+  Tag,
 } from '@chakra-ui/react';
 import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { firestore } from '../../firebase/firebase';
 import Waveform from '../Waveform/Waveform';
-import { FaPlus } from 'react-icons/fa';
+import { FaPlus, FaHeart } from 'react-icons/fa';
 import { MdMusicNote } from 'react-icons/md';
+import useLikeSample from '../../hooks/useLikeSample';
 
 // Color generator function
 const generateColorFromName = (name) => {
@@ -45,6 +49,9 @@ const SampleRow = ({ track }) => {
   if (userLoading) artistName = 'Loading...';
   else if (userError) artistName = 'Error loading user';
   else if (userData?.username) artistName = userData.username;
+
+  // Add like functionality
+  const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
 
   return (
     <Box
@@ -118,6 +125,27 @@ const SampleRow = ({ track }) => {
               by {artistName}
             </Text>
             
+            {/* Improve tag display */}
+            {track.tags && track.tags.length > 0 && (
+              <Wrap spacing={1} mt={2}>
+                {track.tags.map(tag => (
+                  <WrapItem key={tag}>
+                    <Tag 
+                      size="sm" 
+                      colorScheme="purple" 
+                      variant="subtle"
+                      borderRadius="full"
+                      py={1}
+                      px={2}
+                      fontWeight="medium"
+                    >
+                      {tag}
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+            )}
+            
             {/* BPM & Key with badges - visible on small screens */}
             <Flex mt={1} gap={2} display={{ base: 'flex', md: 'none' }}>
               <Badge colorScheme="purple" px={2} borderRadius="full">
@@ -142,10 +170,40 @@ const SampleRow = ({ track }) => {
             </Badge>
           </Flex>
 
-          {/* Add Button */}
-          <Tooltip label="Add to workout" placement="top">
+          {/* Add Like Button */}
+          <Tooltip label={isLiked ? "Unlike" : "Like"} placement="top">
             <Button
-              colorScheme="red"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering any row click events
+                toggleLike();
+              }}
+              colorScheme={isLiked ? "red" : "gray"}
+              variant={isLiked ? "solid" : "outline"}
+              size="sm"
+              borderRadius="full"
+              width="36px"
+              height="36px"
+              p={0}
+              isLoading={likeLoading}
+            >
+              <Icon as={FaHeart} />
+            </Button>
+          </Tooltip>
+          
+          {/* Like Count */}
+          <Text 
+            fontSize="sm" 
+            fontWeight="bold" 
+            color={isLiked ? "red.400" : "gray.400"}
+            minWidth="20px"
+          >
+            {likeCount}
+          </Text>
+
+          {/* Add to Playlist Button */}
+          <Tooltip label="Add to playlist" placement="top">
+            <Button
+              colorScheme="purple"
               size="sm"
               borderRadius="full"
               width="36px"

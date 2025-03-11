@@ -15,7 +15,8 @@ const useUploadFiles = () => {
     name: '',
     key: '',
     bpm: '',
-    coverImage: null, // Add coverImage field
+    coverImage: null,
+    tags: [], // Add tags field
   });
 
   const uploadAudio = async () => {
@@ -47,11 +48,12 @@ const useUploadFiles = () => {
         userId: user.uid,
         audioUrl: downloadURL,
         createdAt: serverTimestamp(),
-        likes: 0,
+        likes: 0, // Make sure this is initialized to 0
         comments: [],
         bpm: inputs.bpm,
         key: inputs.key,
-        name: inputs.name
+        name: inputs.name,
+        tags: inputs.tags || [], // Include tags in the post
       };
 
       // Handle cover image upload if provided
