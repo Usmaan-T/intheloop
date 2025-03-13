@@ -9,19 +9,36 @@ import {
   Icon,
   Tooltip,
   Badge,
+  Image,
+  Wrap,
+  WrapItem,
+  Tag,
 } from '@chakra-ui/react';
 import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { firestore } from '../../firebase/firebase';
 import Waveform from '../Waveform/Waveform';
-import { FaMusic, FaPlus } from 'react-icons/fa';
+import { FaPlus, FaHeart } from 'react-icons/fa';
+import { MdMusicNote } from 'react-icons/md';
+import useLikeSample from '../../hooks/useLikeSample';
+
+// Color generator function
+const generateColorFromName = (name) => {
+  const colors = ['#8A2BE2', '#4A90E2', '#50C878', '#FF6347', '#FFD700'];
+  if (!name) return colors[0];
+  
+  let sum = 0;
+  for (let i = 0; i < name.length; i++) {
+    sum += name.charCodeAt(i);
+  }
+  return colors[sum % colors.length];
+};
 
 const SampleRow = ({ track }) => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const hoverBgColor = useColorModeValue('gray.50', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColorSecondary = useColorModeValue('gray.500', 'gray.400');
-  const artworkBg = useColorModeValue('gray.100', 'gray.700');
 
   // Fetch user details from 'users' collection
   const userDocRef = doc(firestore, 'users', track.userId);
@@ -32,6 +49,9 @@ const SampleRow = ({ track }) => {
   if (userLoading) artistName = 'Loading...';
   else if (userError) artistName = 'Error loading user';
   else if (userData?.username) artistName = userData.username;
+
+  // Add like functionality
+  const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
 
   return (
     <Box
@@ -54,23 +74,45 @@ const SampleRow = ({ track }) => {
       >
         {/* Top section with artwork and track info */}
         <Flex alignItems="center" gap={4} flex="1" minW="250px">
-          {/* Artwork / Placeholder */}
+          {/* Cover Image - Single larger image with proper fallback */}
           <Box
-            w="80px"
-            h="80px"
+            w="100px"
+            h="100px"
             borderRadius="lg"
-            bg={artworkBg}
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
             overflow="hidden"
             border="1px solid"
             borderColor={borderColor}
+            position="relative"
           >
-            {track.artworkUrl ? (
-              <img src={track.artworkUrl} alt={track.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {track.coverImage ? (
+              <Image 
+                src={track.coverImage}
+                alt={track.name}
+                w="100%"
+                h="100%"
+                objectFit="cover"
+                fallback={
+                  <Flex
+                    h="100%"
+                    w="100%"
+                    bg={generateColorFromName(track.name)}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <Icon as={MdMusicNote} color="white" boxSize={6} />
+                  </Flex>
+                }
+              />
             ) : (
-              <Icon as={FaMusic} boxSize="30px" color={textColorSecondary} />
+              <Flex
+                h="100%"
+                w="100%"
+                bg={generateColorFromName(track.name)}
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Icon as={MdMusicNote} color="white" boxSize={8} />
+              </Flex>
             )}
           </Box>
 
@@ -82,6 +124,27 @@ const SampleRow = ({ track }) => {
             <Text fontSize="sm" color={textColorSecondary} noOfLines={1}>
               by {artistName}
             </Text>
+            
+            {/* Improve tag display */}
+            {track.tags && track.tags.length > 0 && (
+              <Wrap spacing={1} mt={2}>
+                {track.tags.map(tag => (
+                  <WrapItem key={tag}>
+                    <Tag 
+                      size="sm" 
+                      colorScheme="purple" 
+                      variant="subtle"
+                      borderRadius="full"
+                      py={1}
+                      px={2}
+                      fontWeight="medium"
+                    >
+                      {tag}
+                    </Tag>
+                  </WrapItem>
+                ))}
+              </Wrap>
+            )}
             
             {/* BPM & Key with badges - visible on small screens */}
             <Flex mt={1} gap={2} display={{ base: 'flex', md: 'none' }}>
@@ -107,10 +170,40 @@ const SampleRow = ({ track }) => {
             </Badge>
           </Flex>
 
-          {/* Add Button */}
-          <Tooltip label="Add to workout" placement="top">
+          {/* Add Like Button */}
+          <Tooltip label={isLiked ? "Unlike" : "Like"} placement="top">
             <Button
-              colorScheme="red"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent triggering any row click events
+                toggleLike();
+              }}
+              colorScheme={isLiked ? "red" : "gray"}
+              variant={isLiked ? "solid" : "outline"}
+              size="sm"
+              borderRadius="full"
+              width="36px"
+              height="36px"
+              p={0}
+              isLoading={likeLoading}
+            >
+              <Icon as={FaHeart} />
+            </Button>
+          </Tooltip>
+          
+          {/* Like Count */}
+          <Text 
+            fontSize="sm" 
+            fontWeight="bold" 
+            color={isLiked ? "red.400" : "gray.400"}
+            minWidth="20px"
+          >
+            {likeCount}
+          </Text>
+
+          {/* Add to Playlist Button */}
+          <Tooltip label="Add to playlist" placement="top">
+            <Button
+              colorScheme="purple"
               size="sm"
               borderRadius="full"
               width="36px"

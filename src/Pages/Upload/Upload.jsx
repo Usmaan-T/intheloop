@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Box, 
   Button, 
@@ -15,9 +15,20 @@ import {
   Progress,
   HStack,
   Icon,
-  Flex
+  Flex,
+  Image,
+  Tag,
+  TagLabel,
+  TagCloseButton,
+  Wrap,
+  WrapItem,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  SimpleGrid
 } from '@chakra-ui/react';
-import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck } from 'react-icons/md';
+import { MdMusicNote, MdSpeed, MdTitle, MdFileUpload, MdCheck, MdAddPhotoAlternate, MdTag } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import useUploadFiles from '../../hooks/useUploadFiles';
@@ -26,9 +37,21 @@ import DropzoneUploader from '../../components/Upload/DropzoneUploader';
 const MotionBox = motion(Box);
 const MotionContainer = motion(Container);
 
+// Predefined tags for samples
+const SAMPLE_TAGS = {
+  genre: ['Hip Hop', 'EDM', 'Rock', 'Lo-Fi', 'Trap', 'House', 'Pop', 'RnB', 'Jazz', 'Classical'],
+  mood: ['Energetic', 'Chill', 'Intense', 'Dark', 'Happy', 'Sad', 'Calm', 'Aggressive'],
+  workout: ['Cardio', 'Strength', 'HIIT', 'Yoga', 'Stretching', 'Warm-Up', 'Cool-Down', 'Running'],
+  tempo: ['Slow', 'Medium', 'Fast', 'Variable']
+};
+
 const UploadPage = () => {
   const toast = useToast();
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [coverImage, setCoverImage] = useState(null);
+  const coverImageRef = useRef(null);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const MAX_TAGS = 4;
   
   const {
     audioUpload,
@@ -39,6 +62,30 @@ const UploadPage = () => {
     setInputs,
     inputs,
   } = useUploadFiles();
+
+  const handleImageChange = (e) => {
+    if (e.target.files[0]) {
+      setCoverImage(e.target.files[0]);
+      setInputs({
+        ...inputs,
+        coverImage: e.target.files[0]
+      });
+    }
+  };
+
+  const handleAddTag = (tag) => {
+    if (selectedTags.length < MAX_TAGS && !selectedTags.includes(tag)) {
+      const newTags = [...selectedTags, tag];
+      setSelectedTags(newTags);
+      setInputs({ ...inputs, tags: newTags });
+    }
+  };
+
+  const handleRemoveTag = (tag) => {
+    const newTags = selectedTags.filter(t => t !== tag);
+    setSelectedTags(newTags);
+    setInputs({ ...inputs, tags: newTags });
+  };
 
   const handleUpload = async () => {
     if (!audioUpload) {
@@ -159,6 +206,74 @@ const UploadPage = () => {
                 />
               </FormControl>
               
+              <FormControl id="coverImage">
+                <FormLabel color="gray.300" fontSize="lg" fontWeight="medium">
+                  Cover Image (Optional)
+                </FormLabel>
+                <Flex 
+                  direction="column" 
+                  align="center" 
+                  justify="center"
+                  bg="whiteAlpha.100"
+                  borderRadius="md"
+                  p={4}
+                  cursor="pointer"
+                  onClick={() => coverImageRef.current?.click()}
+                  borderWidth={1}
+                  borderColor="whiteAlpha.300"
+                  borderStyle="dashed"
+                  transition="all 0.3s"
+                  _hover={{ bg: "whiteAlpha.200" }}
+                  h="150px"
+                  overflow="hidden"
+                  position="relative"
+                >
+                  {coverImage ? (
+                    <>
+                      <Image 
+                        src={URL.createObjectURL(coverImage)}
+                        alt="Cover preview"
+                        objectFit="cover"
+                        borderRadius="md"
+                        position="absolute"
+                        top="0"
+                        left="0"
+                        width="100%"
+                        height="100%"
+                      />
+                      <Box 
+                        position="absolute"
+                        top="0"
+                        left="0"
+                        width="100%"
+                        height="100%"
+                        bg="blackAlpha.600"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        opacity="0"
+                        transition="opacity 0.3s"
+                        _hover={{ opacity: "1" }}
+                      >
+                        <Text color="white" fontWeight="bold">Change Image</Text>
+                      </Box>
+                    </>
+                  ) : (
+                    <>
+                      <Icon as={MdAddPhotoAlternate} color="purple.400" fontSize="2xl" mb={2} />
+                      <Text color="gray.300">Click to upload cover image</Text>
+                    </>
+                  )}
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    ref={coverImageRef}
+                    onChange={handleImageChange}
+                  />
+                </Flex>
+              </FormControl>
+              
               {uploadProgress > 0 && (
                 <Box>
                   <Flex justify="space-between" mb={1}>
@@ -241,6 +356,152 @@ const UploadPage = () => {
                   </InputGroup>
                 </FormControl>
               </HStack>
+              
+              {/* Add Tags Section */}
+              <FormControl id="tags">
+                <FormLabel color="gray.300" mb={2}>Tags (Max 4)</FormLabel>
+                
+                {/* Display selected tags */}
+                <Wrap spacing={2} mb={3}>
+                  {selectedTags.map(tag => (
+                    <WrapItem key={tag}>
+                      <Tag
+                        size="md"
+                        borderRadius="full"
+                        variant="solid"
+                        colorScheme="purple"
+                      >
+                        <TagLabel>{tag}</TagLabel>
+                        <TagCloseButton onClick={() => handleRemoveTag(tag)} />
+                      </Tag>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+                
+                {/* Tag selection UI */}
+                <Box>
+                  <Text color="gray.400" fontSize="sm" mb={2}>
+                    Select tags ({selectedTags.length}/{MAX_TAGS})
+                  </Text>
+                  
+                  <SimpleGrid columns={2} spacing={3}>
+                    {/* Genre Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color={'white'}
+                      >
+                        Genre
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.genre.map(tag => (
+                          <MenuItem 
+                            key={tag}
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Mood Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color='white'
+                      >
+                        Mood
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.mood.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Workout Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                      >
+                        Workout
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.workout.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                    
+                    {/* Tempo Tags */}
+                    <Menu closeOnSelect={false}>
+                      <MenuButton 
+                        as={Button} 
+                        rightIcon={<Icon as={MdTag} />} 
+                        isDisabled={selectedTags.length >= MAX_TAGS}
+                        bg="whiteAlpha.200"
+                        _hover={{ bg: "whiteAlpha.300" }}
+                        size="sm"
+                        color={'white'}
+                      >
+                        Tempo
+                      </MenuButton>
+                      <MenuList bg="gray.800">
+                        {SAMPLE_TAGS.tempo.map(tag => (
+                          <MenuItem 
+                            key={tag} 
+                            onClick={() => handleAddTag(tag)}
+                            isDisabled={selectedTags.includes(tag) || selectedTags.length >= MAX_TAGS}
+                            bg="gray.800"
+                            _hover={{ bg: "purple.700" }}
+                            color="white" // Add this for better contrast
+                          >
+                            {tag}
+                          </MenuItem>
+                        ))}
+                      </MenuList>
+                    </Menu>
+                  </SimpleGrid>
+                </Box>
+              </FormControl>
               
               <Button 
                 onClick={handleUpload} 
