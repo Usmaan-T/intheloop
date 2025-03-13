@@ -54,7 +54,7 @@ const NavBar = () => {
 
   const navItems = [
     { name: "Home", path: "/", icon: <FaHome /> },
-    { name: "Explore", path: "/beats", icon: <FaCompass /> },
+    { name: "Explore", path: "/explore", icon: <FaCompass /> },
     { name: "Samples", path: "/samples", icon: <FaHeadphones /> },
     { name: "Upload", path: "/upload", icon: <FaUpload /> },
     { name: "Profile", path: "/profilepage", icon: <FaUser /> },
