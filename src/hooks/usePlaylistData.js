@@ -9,37 +9,26 @@ const usePlaylistData = () => {
     const [playlistData, setPlaylistData] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [user] = useAuthState(auth); // Get user directly in the hook
+    const [user] = useAuthState(auth);
     const toast = useToast();
 
     const addToPlaylist = async (track, playlist) => {
+        // Basic validation
         if (!user) {
             toast({
-                title: 'Authentication required',
-                description: 'Please log in to add tracks to playlists',
+                title: 'Please login',
+                description: 'You need to be logged in to add tracks',
                 status: 'error',
                 duration: 3000,
                 isClosable: true
             });
             return false;
         }
-
-        if (!playlist || !playlist.id) {
+        
+        if (!playlist?.id) {
             toast({
-                title: 'Invalid playlist',
-                description: 'The selected playlist is invalid',
-                status: 'error',
-                duration: 3000,
-                isClosable: true
-            });
-            return false;
-        }
-
-        // Validate track data
-        if (!track || !track.id || !track.audioUrl) {
-            toast({
-                title: 'Invalid track data',
-                description: 'The track data is incomplete',
+                title: 'Error',
+                description: 'Invalid playlist selected',
                 status: 'error',
                 duration: 3000,
                 isClosable: true
@@ -48,38 +37,66 @@ const usePlaylistData = () => {
         }
 
         setIsAdding(true);
+        
         try {
-            // First, get the latest playlist data
+            // First get fresh playlist data
             const playlistRef = doc(firestore, 'playlists', playlist.id);
-            const playlistDoc = await getDoc(playlistRef);
+            const playlistSnap = await getDoc(playlistRef);
             
-            if (!playlistDoc.exists()) {
+            if (!playlistSnap.exists()) {
                 throw new Error('Playlist not found');
             }
             
-            const currentData = playlistDoc.data();
+            const playlistData = playlistSnap.data();
             
             // Ensure tracks array exists
-            const currentTracks = currentData.tracks || [];
+            const currentTracks = playlistData.tracks || [];
             
-            // Sanitize track data (remove any undefined values)
-            const cleanTrack = {};
-            Object.keys(track).forEach(key => {
-                if (track[key] !== undefined) {
-                    cleanTrack[key] = track[key];
-                }
-            });
+            // Check if track already exists
+            const isDuplicate = currentTracks.some(t => t.id === track.id);
+            if (isDuplicate) {
+                toast({
+                    title: 'Already added',
+                    description: 'This track is already in the playlist',
+                    status: 'info',
+                    duration: 3000,
+                    isClosable: true
+                });
+                setIsAdding(false);
+                return false;
+            }
             
-            // Add default values for critical fields if missing
-            if (!cleanTrack.name) cleanTrack.name = 'Untitled Track';
+            // Sanitize the track object to avoid undefined values
+            const safeTrack = {
+                id: track.id,
+                name: track.name || 'Untitled Track',
+                audioUrl: track.audioUrl,
+                key: track.key || 'Unknown',
+                bpm: track.bpm || 0,
+                addedAt: new Date(),
+                userId: track.userId || 'unknown'
+            };
             
-            // Update the playlist
+            // Add coverImage only if it exists
+            if (track.coverImage) {
+                safeTrack.coverImage = track.coverImage;
+            }
+            
+            // Add tags only if they exist and are an array
+            if (Array.isArray(track.tags)) {
+                safeTrack.tags = [...track.tags];
+            } else {
+                safeTrack.tags = []; // Ensure we always have a tags array
+            }
+            
+            // Update the playlist document
             await updateDoc(playlistRef, {
-                tracks: [...currentTracks, cleanTrack]
+                tracks: [...currentTracks, safeTrack]
             });
-
+            
             toast({
-                title: 'Track added to playlist',
+                title: 'Track added',
+                description: 'Track was added to your playlist',
                 status: 'success',
                 duration: 3000,
                 isClosable: true
@@ -87,10 +104,10 @@ const usePlaylistData = () => {
             
             return true;
         } catch (error) {
-            console.error('Error adding track to playlist:', error);
+            console.error('Error adding to playlist:', error);
             toast({
-                title: 'Error adding track to playlist',
-                description: error.message,
+                title: 'Error',
+                description: 'Failed to add track to playlist',
                 status: 'error',
                 duration: 3000,
                 isClosable: true

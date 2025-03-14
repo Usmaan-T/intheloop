@@ -194,7 +194,7 @@ const NavBar = () => {
               <PopoverContent bg="gray.800" borderColor="gray.700" width="200px">
                 <PopoverBody p={0}>
                   <VStack align="stretch" spacing={0}>
-                    <Link as={RouterLink} to="/profile" py={3} px={4} _hover={{ bg: "whiteAlpha.200", textDecoration: 'none' }}>
+                    <Link as={RouterLink} to="/profilepage" py={3} px={4} _hover={{ bg: "whiteAlpha.200", textDecoration: 'none' }}>
                       Profile
                     </Link>
                     <Link as={RouterLink} to="/settings" py={3} px={4} _hover={{ bg: "whiteAlpha.200", textDecoration: 'none' }}>

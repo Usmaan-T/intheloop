@@ -96,6 +96,7 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick }) => {
                       image={playlist.coverImage || playlist.image}
                       color={playlist.colorCode}
                       privacy={playlist.privacy}
+                      id={playlist.id}  // Make sure to pass the id here
                     />
                   </GridItem>
                 ))}

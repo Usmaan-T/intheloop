@@ -1,8 +1,9 @@
 import { Box, Heading, Image, Text, VStack, Flex, Badge } from '@chakra-ui/react';
 import React from 'react';
 import { MdLibraryMusic, MdLock } from 'react-icons/md';
+import { Link } from 'react-router-dom';
 
-const Playlist = ({ name, bio, image, color, privacy }) => {
+const Playlist = ({ name, bio, image, color, privacy, id }) => {
   // Use provided color or generate one from name
   const getColorFromName = (name) => {
     if (color) return color;
@@ -22,6 +23,8 @@ const Playlist = ({ name, bio, image, color, privacy }) => {
 
   return (
     <Box 
+      as={id ? Link : 'div'}  // Only use Link if id is defined
+      to={id ? `/playlist/${id}` : '#'}  // Safe path with id check
       borderRadius="md" 
       overflow="hidden" 
       bg="blackAlpha.400"

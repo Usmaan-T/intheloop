@@ -11,6 +11,8 @@ import ProfilePage from './Pages/ProfilePage/ProfilePage'
 import CreatePlaylist from './components/Playlist/CreatePlaylist'
 import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
+import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
+import LoggedInHome from './Pages/Home/LoggedInHome'
 
 const App = () => {
   const [user, loading] = useAuthState(auth);
@@ -22,7 +24,7 @@ const App = () => {
   }
   return (
     <Routes>
-      <Route path='/' element={<Home />}/>
+      <Route path='/' element={user ? <LoggedInHome /> : <Home />} />
       <Route path='/auth' element={<AuthPage/>} />
       <Route path='/login' element={<LogIn />} />
       <Route path='/upload' element={user ? <Upload /> : <Navigate to="/auth" />} />
@@ -30,6 +32,7 @@ const App = () => {
       <Route path='/explore' element={<ExplorePage />} /> {/* Add this route */}
       <Route path='/createplaylist' element={<CreatePlaylist />} />
       <Route path='/admin/migration' element={<SchemaMigrationPage />} />
+      <Route path='/playlist/:id' element={<PlaylistDetailPage />} />
     </Routes>
   )
 }

@@ -13,32 +13,28 @@ import {
   Wrap,
   WrapItem,
   Badge,
-  useColorModeValue,
-  useDisclosure,
+  useDisclosure, 
   Modal, 
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
-  Button,
-  List,
+  ModalOverlay, 
+  ModalContent, 
+  ModalHeader, 
+  ModalBody, 
+  ModalFooter, 
+  ModalCloseButton, 
+  Button, 
+  List, 
   ListItem,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem
+  Spinner
 } from '@chakra-ui/react';
-import { FaHeart, FaPlay, FaPause, FaPlus, FaChevronDown } from 'react-icons/fa';
+import { FaHeart, FaPlay, FaPause, FaPlus } from 'react-icons/fa';
 import { MdMusicNote } from 'react-icons/md';
 import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { firestore, auth } from '../../firebase/firebase';
 import useLikeSample from '../../hooks/useLikeSample';
+import { useAuthState } from 'react-firebase-hooks/auth';
 import useUserPlaylists from '../../hooks/useUserPlaylists';
 import usePlaylistData from '../../hooks/usePlaylistData';
-import { useAuthState } from 'react-firebase-hooks/auth';
 
 // Generate color from name function
 const generateColorFromName = (name) => {
@@ -72,7 +68,7 @@ const SampleCard = ({ sample, onNext }) => {
   
   // Add modal disclosure
   const { isOpen, onOpen, onClose } = useDisclosure();
-  
+
   const handlePlayToggle = () => {
     if (!audioRef.current) return;
     
@@ -92,31 +88,41 @@ const SampleCard = ({ sample, onNext }) => {
       setTimeout(onNext, 1500); // Auto advance after a short delay
     }
   };
-  
+
   // Handle adding to playlist
   const handleAddToPlaylist = async (playlist) => {
-    // Check if playlist has tracks array and initialize if not
-    if (!playlist.tracks) {
-      playlist.tracks = [];
-    }
-    
-    // Create a sanitized track object with no undefined values
-    const trackToAdd = {
-      id: sample.id || `track-${Date.now()}`,
-      name: sample.name || 'Untitled Track',
-      audioUrl: sample.audioUrl || '',
-      // Only add these if they exist
-      ...(sample.coverImage ? { coverImage: sample.coverImage } : {}),
-      ...(sample.key ? { key: sample.key } : {}),
-      ...(sample.bpm ? { bpm: sample.bpm } : {}),
-      addedAt: new Date(),
-      userId: sample.userId || user?.uid || 'unknown',
-    };
-    
-    // Show loading state on the button
-    const success = await addToPlaylist(trackToAdd, playlist);
-    if (success) {
-      onClose();
+    try {
+      // Make sure sample has required fields
+      if (!sample || !sample.id || !sample.audioUrl) {
+        console.error("Invalid sample data:", sample);
+        return;
+      }
+      
+      // Create a track object with essential properties
+      const trackToAdd = {
+        id: sample.id,
+        name: sample.name || 'Untitled Track',
+        audioUrl: sample.audioUrl,
+        // Include optional fields only if they exist
+        ...(sample.coverImage ? { coverImage: sample.coverImage } : {}),
+        ...(sample.key ? { key: sample.key } : {}),
+        ...(sample.bpm ? { bpm: sample.bpm } : {}),
+        // Include tags with a fallback to empty array
+        tags: Array.isArray(sample.tags) ? [...sample.tags] : [],
+        // Metadata
+        userId: sample.userId,
+        addedBy: user?.uid,
+        addedAt: new Date()
+      };
+      
+      // Add the track using the hook
+      const success = await addToPlaylist(trackToAdd, playlist);
+      
+      if (success) {
+        onClose();
+      }
+    } catch (error) {
+      console.error("Error in handleAddToPlaylist:", error);
     }
   };
 
@@ -152,23 +158,23 @@ const SampleCard = ({ sample, onNext }) => {
         width="100%"
         position="relative"
         zIndex={1}
-        p={{ base: 3, md: 6 }} // Responsive padding
+        p={{ base: 3, md: 6 }}
         justifyContent="space-between"
-        bg="rgba(0, 0, 0, 0.5)" // Add semi-transparent background for better text contrast
+        bg="rgba(0, 0, 0, 0.5)"
       >
-        {/* Top section - Sample details with better spacing */}
+        {/* Top section - Sample details */}
         <Flex 
           justifyContent="space-between" 
           width="100%"
-          mb={4} // Add margin-bottom for separation
+          mb={4}
         >
-          <VStack align="flex-start" spacing={1} maxW="60%"> {/* Limit width to prevent overflow */}
+          <VStack align="flex-start" spacing={1} maxW="60%">
             <Text 
               fontSize={{ base: "xl", md: "2xl" }} 
               fontWeight="bold" 
               color="white"
-              noOfLines={1} // Limit to 1 line with ellipsis
-              textShadow="0px 1px 2px rgba(0,0,0,0.8)" // Add text shadow for readability
+              noOfLines={1}
+              textShadow="0px 1px 2px rgba(0,0,0,0.8)"
             >
               {sample.name}
             </Text>
@@ -185,7 +191,7 @@ const SampleCard = ({ sample, onNext }) => {
             </HStack>
           </VStack>
           
-          {/* Sample metadata with better positioning */}
+          {/* Sample metadata */}
           <VStack align="flex-end" spacing={2}>
             <Badge colorScheme="purple" px={2} py={1} borderRadius="full">
               {sample.bpm} BPM
@@ -196,13 +202,13 @@ const SampleCard = ({ sample, onNext }) => {
           </VStack>
         </Flex>
         
-        {/* Center section - Cover image and play button with better spacing */}
+        {/* Center section - Cover image and play button */}
         <Flex 
           justifyContent="center" 
           alignItems="center" 
           flex={1}
           position="relative"
-          my={{ base: 2, md: 4 }} // Add vertical margin
+          my={{ base: 2, md: 4 }}
         >
           <Box
             width="200px"
@@ -257,9 +263,9 @@ const SampleCard = ({ sample, onNext }) => {
           />
         </Flex>
         
-        {/* Bottom section - Tags and actions with improved layout */}
+        {/* Bottom section - Tags and actions */}
         <VStack spacing={4} width="100%" mt={4}>
-          {/* Tags with limited width and scrolling */}
+          {/* Tags section */}
           {sample.tags && sample.tags.length > 0 && (
             <Box width="100%" maxW="400px" mx="auto" overflow="hidden">
               <Wrap justify="center" spacing={2}>
@@ -279,7 +285,7 @@ const SampleCard = ({ sample, onNext }) => {
             </Box>
           )}
           
-          {/* Action buttons with better spacing */}
+          {/* Action buttons */}
           <HStack spacing={{ base: 6, md: 8 }} justifyContent="center">
             <VStack spacing={1}>
               <IconButton
@@ -303,11 +309,11 @@ const SampleCard = ({ sample, onNext }) => {
                 icon={<FaPlus />}
                 aria-label="Add to playlist"
                 rounded="full"
-                colorScheme="purple" // Changed from whiteAlpha to purple for more visibility
+                colorScheme="purple"
                 onClick={user ? onOpen : null}
                 isDisabled={!user}
                 size="md"
-                boxShadow="0px 0px 10px rgba(159, 122, 234, 0.5)" // Add glow effect
+                boxShadow="0px 0px 10px rgba(159, 122, 234, 0.5)"
                 _hover={{ 
                   transform: 'scale(1.1)',
                   boxShadow: '0px 0px 15px rgba(159, 122, 234, 0.8)'
@@ -316,7 +322,7 @@ const SampleCard = ({ sample, onNext }) => {
               <Text 
                 color="white"
                 textShadow="0px 1px 2px rgba(0,0,0,0.8)"
-                fontWeight="bold" // Make text bolder
+                fontWeight="bold"
               >
                 Add
               </Text>
@@ -324,7 +330,7 @@ const SampleCard = ({ sample, onNext }) => {
           </HStack>
         </VStack>
       </Flex>
-      
+
       {/* Add Playlist Selection Modal */}
       <Modal isOpen={isOpen} onClose={onClose} size="sm">
         <ModalOverlay backdropFilter="blur(5px)" />
@@ -343,11 +349,32 @@ const SampleCard = ({ sample, onNext }) => {
                     bg="whiteAlpha.100"
                     _hover={{ bg: "whiteAlpha.200" }}
                     borderRadius="md"
-                    cursor="pointer"
-                    onClick={() => handleAddToPlaylist(playlist)}
+                    cursor={isAdding ? "not-allowed" : "pointer"}
+                    onClick={isAdding ? null : () => handleAddToPlaylist(playlist)}
                     display="flex"
                     alignItems="center"
+                    position="relative"
+                    opacity={isAdding ? 0.7 : 1}
                   >
+                    {isAdding && (
+                      <Box 
+                        position="absolute"
+                        top={0}
+                        left={0}
+                        right={0}
+                        bottom={0}
+                        bg="blackAlpha.700"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        borderRadius="md"
+                        zIndex={2}
+                      >
+                        <Spinner size="sm" color="white" mr={2} />
+                        <Text fontSize="sm">Adding...</Text>
+                      </Box>
+                    )}
+                    
                     {playlist.coverImage ? (
                       <Image 
                         src={playlist.coverImage}

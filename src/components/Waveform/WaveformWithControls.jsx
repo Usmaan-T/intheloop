@@ -16,7 +16,7 @@ const WaveformWithControls = ({ audioUrl, options = {} }) => {
     
     wavesurfer.current = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: 'grey',
+      waveColor: 'black',
       progressColor: '#3B8686',
       cursorColor: '#3B8686',
       barWidth: 2,

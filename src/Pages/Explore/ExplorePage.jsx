@@ -107,7 +107,7 @@ const ExplorePage = () => {
         <NavBar />
         <Flex height="calc(100vh - 80px)" justifyContent="center" alignItems="center">
           <VStack>
-            <Spinner size="xl" color="purple.500" thickness="4px" />
+            <Spinner size="xl" color="red.500" thickness="4px" />
             <Text mt={4} color="white">Discovering samples...</Text>
           </VStack>
         </Flex>
@@ -123,7 +123,7 @@ const ExplorePage = () => {
         <Flex height="calc(100vh - 80px)" justifyContent="center" alignItems="center">
           <VStack>
             <Text color="red.400">Error loading samples</Text>
-            <Button onClick={refreshSamples} colorScheme="purple" mt={4}>
+            <Button onClick={refreshSamples} colorScheme="red" mt={4}>
               Try Again
             </Button>
           </VStack>
@@ -197,8 +197,6 @@ const ExplorePage = () => {
             boxShadow="0px 4px 10px rgba(0,0,0,0.4)" // Add shadow for separation
             zIndex={20} // Ensure it's above other elements
           >
-            <FaArrowDown size="24px" />
-            <Text mt={2} fontWeight="medium">Swipe up for next sample</Text>
           </Flex>
         )}
 
@@ -229,7 +227,7 @@ const ExplorePage = () => {
             aria-label="Refresh samples"
             isRound
             onClick={handleRefresh}
-            colorScheme="purple"
+            colorScheme="red"
             size="lg"
             boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
             _hover={{ transform: 'scale(1.1)' }}
@@ -242,35 +240,13 @@ const ExplorePage = () => {
             isRound
             onClick={handleNext}
             isDisabled={currentIndex === samples.length - 1 && !hasMore}
-            colorScheme={currentIndex < samples.length - 1 ? "purple" : "whiteAlpha"}
+            colorScheme={currentIndex < samples.length - 1 ? "red" : "whiteAlpha"}
             size="lg"
             boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
             _hover={{ transform: 'scale(1.1)' }}
           />
         </Flex>
-        
-        {/* Add a more prominent bottom swipe indicator when there are more samples */}
-        {currentIndex < samples.length - 1 && (
-          <Flex
-            position="absolute"
-            bottom={8} // Move higher up
-            left="50%"
-            transform="translateX(-50%)"
-            color="white"
-            flexDirection="column"
-            alignItems="center"
-            bg="blackAlpha.600" // Add background
-            px={3}
-            py={1}
-            borderRadius="full"
-            zIndex={5}
-          >
-            <Box css={pulseAnimation}>
-              <FaChevronDown />
-            </Box>
-            <Text fontSize="xs" mt={1}>Next</Text>
-          </Flex>
-        )}
+      
         
         {/* Progress indicator - make it more prominent */}
         {samples.length > 0 && (
