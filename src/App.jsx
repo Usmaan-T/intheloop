@@ -13,6 +13,7 @@ import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
 import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
+import UserProfilePage from './Pages/User/UserProfilePage'
 
 const App = () => {
   const [user, loading] = useAuthState(auth);
@@ -33,6 +34,7 @@ const App = () => {
       <Route path='/createplaylist' element={<CreatePlaylist />} />
       <Route path='/admin/migration' element={<SchemaMigrationPage />} />
       <Route path='/playlist/:id' element={<PlaylistDetailPage />} />
+      <Route path="/user/:userId" element={<UserProfilePage />} />
     </Routes>
   )
 }

@@ -193,7 +193,7 @@ const SampleCard = ({ sample, onNext }) => {
           
           {/* Sample metadata */}
           <VStack align="flex-end" spacing={2}>
-            <Badge colorScheme="purple" px={2} py={1} borderRadius="full">
+            <Badge colorScheme="red" px={2} py={1} borderRadius="full">
               {sample.bpm} BPM
             </Badge>
             <Badge colorScheme="blue" px={2} py={1} borderRadius="full">
@@ -246,7 +246,7 @@ const SampleCard = ({ sample, onNext }) => {
             icon={isPlaying ? <FaPause /> : <FaPlay />}
             size="lg"
             rounded="full"
-            colorScheme="purple"
+            colorScheme="red"
             onClick={handlePlayToggle}
             boxShadow="xl"
             width="60px"
@@ -273,7 +273,7 @@ const SampleCard = ({ sample, onNext }) => {
                   <WrapItem key={tag}>
                     <Tag 
                       size="md" 
-                      colorScheme="purple" 
+                      colorScheme="red" 
                       variant="solid"
                       borderRadius="full"
                     >
@@ -309,14 +309,14 @@ const SampleCard = ({ sample, onNext }) => {
                 icon={<FaPlus />}
                 aria-label="Add to playlist"
                 rounded="full"
-                colorScheme="purple"
+                colorScheme="red"
                 onClick={user ? onOpen : null}
                 isDisabled={!user}
                 size="md"
-                boxShadow="0px 0px 10px rgba(159, 122, 234, 0.5)"
+                boxShadow="0px 0px 10px rgba(229, 62, 62, 0.5)"
                 _hover={{ 
                   transform: 'scale(1.1)',
-                  boxShadow: '0px 0px 15px rgba(159, 122, 234, 0.8)'
+                  boxShadow: '0px 0px 15px rgba(229, 62, 62, 0.8)'
                 }}
               />
               <Text 
@@ -404,7 +404,7 @@ const SampleCard = ({ sample, onNext }) => {
             ) : (
               <VStack spacing={3} py={4}>
                 <Text>You don't have any playlists yet</Text>
-                <Button colorScheme="purple" size="sm" as="a" href="/createplaylist">
+                <Button colorScheme="red" size="sm" as="a" href="/createplaylist">
                   Create Playlist
                 </Button>
               </VStack>
