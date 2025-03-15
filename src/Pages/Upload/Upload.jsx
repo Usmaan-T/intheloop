@@ -41,7 +41,7 @@ const MotionContainer = motion(Container);
 const SAMPLE_TAGS = {
   genre: ['Hip Hop', 'EDM', 'Rock', 'Lo-Fi', 'Trap', 'House', 'Pop', 'RnB', 'Jazz', 'Classical'],
   mood: ['Energetic', 'Chill', 'Intense', 'Dark', 'Happy', 'Sad', 'Calm', 'Aggressive'],
-  workout: ['Cardio', 'Strength', 'HIIT', 'Yoga', 'Stretching', 'Warm-Up', 'Cool-Down', 'Running'],
+  instrument: ['Piano', 'Guitar', 'Synth', 'Pad', 'Bass', 'Warm-Up', 'Drums', 'Strings', 'Brass'],
   tempo: ['Slow', 'Medium', 'Fast', 'Variable']
 };
 
@@ -51,7 +51,7 @@ const UploadPage = () => {
   const [coverImage, setCoverImage] = useState(null);
   const coverImageRef = useRef(null);
   const [selectedTags, setSelectedTags] = useState([]);
-  const MAX_TAGS = 4;
+  const MAX_TAGS = 8;
   
   const {
     audioUpload,
@@ -453,10 +453,10 @@ const UploadPage = () => {
                         _hover={{ bg: "whiteAlpha.300" }}
                         size="sm"
                       >
-                        Workout
+                        Instrument
                       </MenuButton>
-                      <MenuList bg="gray.800">
-                        {SAMPLE_TAGS.workout.map(tag => (
+                      <MenuList bg="white">
+                        {SAMPLE_TAGS.instrument.map(tag => (
                           <MenuItem 
                             key={tag} 
                             onClick={() => handleAddTag(tag)}

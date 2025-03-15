@@ -4,9 +4,15 @@ import { doc, getDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import useFollowUser from '../../hooks/useFollowUser';
 
-const FollowButton = ({ userId, currentUser, size = "md" }) => {
-  const [isFollowing, setIsFollowing] = useState(false);
-  const { followUser, loading } = useFollowUser();
+// Add onFollowChange callback prop to notify parent components of follow state changes
+const FollowButton = ({ 
+  userId, 
+  currentUser, 
+  size = "md", 
+  onFollowChange = null // Add this new callback prop
+}) => {
+  const [isUserFollowing, setIsUserFollowing] = useState(false);
+  const { followUser, unfollowUser, loading } = useFollowUser();
   
   // Check if current user is following target user
   useEffect(() => {
@@ -18,7 +24,7 @@ const FollowButton = ({ userId, currentUser, size = "md" }) => {
         if (userDoc.exists()) {
           const userData = userDoc.data();
           const following = userData.following || [];
-          setIsFollowing(following.includes(userId));
+          setIsUserFollowing(following.includes(userId));
         }
       } catch (err) {
         console.error('Error checking follow status:', err);
@@ -30,10 +36,21 @@ const FollowButton = ({ userId, currentUser, size = "md" }) => {
   
   // Handle follow/unfollow action
   const handleFollowClick = async () => {
-    if (isFollowing) return; // Prevent duplicate follow
-    
-    await followUser(userId);
-    setIsFollowing(true);
+    if (isUserFollowing) {
+      const success = await unfollowUser(userId);
+      if (success) {
+        setIsUserFollowing(false);
+        // Notify parent component that follower count decreased
+        if (onFollowChange) onFollowChange(-1);
+      }
+    } else {
+      const success = await followUser(userId);
+      if (success) {
+        setIsUserFollowing(true);
+        // Notify parent component that follower count increased
+        if (onFollowChange) onFollowChange(1);
+      }
+    }
   };
 
   // Don't render if no current user or if viewing own profile
@@ -44,13 +61,22 @@ const FollowButton = ({ userId, currentUser, size = "md" }) => {
   return (
     <Button 
       colorScheme="red" 
+      variant={isUserFollowing ? "outline" : "solid"}
       size={size}
       onClick={handleFollowClick}
       isLoading={loading}
-      loadingText="Following..."
-      isDisabled={isFollowing}
+      loadingText={isUserFollowing ? "Unfollowing..." : "Following..."}
+      // Add custom styling for better contrast when in "unfollow" state
+      borderColor={isUserFollowing ? "red.500" : undefined}
+      borderWidth={isUserFollowing ? "1px" : undefined}
+      color={isUserFollowing ? "red.400" : undefined}
+      _hover={{
+        bg: isUserFollowing ? "rgba(229, 62, 62, 0.15)" : undefined,
+        borderColor: isUserFollowing ? "red.400" : undefined,
+        color: isUserFollowing ? "red.300" : undefined
+      }}
     >
-      {isFollowing ? "Following" : "Follow"}
+      {isUserFollowing ? "Unfollow" : "Follow"}
     </Button>
   );
 };

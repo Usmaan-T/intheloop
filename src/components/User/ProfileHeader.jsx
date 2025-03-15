@@ -15,6 +15,7 @@ const ProfileHeader = ({
   currentUser, 
   stats = { samples: 0, playlists: 0, followers: 0 },
   showFollowButton = true,
+  onFollowChange = null, // Add this new prop
   children
 }) => {
   if (!user) return null;
@@ -66,7 +67,11 @@ const ProfileHeader = ({
             
             {showFollowButton && currentUser && (
               <Box mt={4}>
-                <FollowButton userId={user.id} currentUser={currentUser} />
+                <FollowButton 
+                  userId={user.id} 
+                  currentUser={currentUser} 
+                  onFollowChange={onFollowChange} // Pass the callback through
+                />
               </Box>
             )}
             

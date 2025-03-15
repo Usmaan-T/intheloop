@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   Box,
@@ -32,6 +32,21 @@ const UserProfilePage = () => {
   const { stats, loading: statsLoading } = useUserStats(userId);
   const { tracks, isLoading: tracksLoading, error: tracksError } = useUserTracks(userId);
   const { playlists, isLoading: playlistsLoading, error: playlistsError } = useUserPlaylists(userId);
+  
+  // Add state for follower count that can be updated immediately
+  const [followersCount, setFollowersCount] = useState(0);
+  
+  // Update the followers count when stats are loaded
+  useEffect(() => {
+    if (stats && !statsLoading) {
+      setFollowersCount(stats.followers);
+    }
+  }, [stats, statsLoading]);
+  
+  // Handler for follow/unfollow actions
+  const handleFollowChange = (change) => {
+    setFollowersCount(prev => Math.max(0, prev + change));
+  };
   
   // Loading state
   if (loading || statsLoading) {
@@ -81,11 +96,15 @@ const UserProfilePage = () => {
     <>
       <NavBar />
       <Box bgColor="blackAlpha.900" minH="calc(100vh - 80px)">
-        {/* Use the ProfileHeader component */}
+        {/* Pass our custom stats with updated follower count */}
         <ProfileHeader 
           user={user} 
           currentUser={currentUser} 
-          stats={stats}
+          stats={{
+            ...stats,
+            followers: followersCount // Use our state-managed count
+          }}
+          onFollowChange={handleFollowChange} // Add the handler
         />
         
         {/* Rest of the page remains the same */}
