@@ -22,10 +22,10 @@ import { firestore } from '../../firebase/firebase';
 import NavBar from '../../components/Navbar/NavBar';
 import { MdMusicNote, MdPlayArrow, MdPause, MdPlaylistPlay } from 'react-icons/md';
 import { FaPlay, FaClock } from 'react-icons/fa';
-import PlaylistTrackItem from '../../components/Playlist/PlaylistTrackItem';
 import Footer from '../../components/footer/Footer';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
+import SampleRow from '../../components/Samples/SampleRow';
 
 const PlaylistDetailPage = () => {
   const { id } = useParams();
@@ -113,7 +113,7 @@ const PlaylistDetailPage = () => {
         <NavBar />
         <Flex height="calc(100vh - 80px)" justify="center" align="center">
           <VStack spacing={4}>
-            <Spinner size="xl" color="purple.500" thickness="4px" />
+            <Spinner size="xl" color="red.500" thickness="4px" />
             <Text color="white">Loading playlist...</Text>
           </VStack>
         </Flex>
@@ -141,13 +141,14 @@ const PlaylistDetailPage = () => {
   return (
     <>
       <NavBar />
-      <Box minH="calc(100vh - 80px)" bg="gray.900">
+      <Box minH="calc(100vh - 80px)" bg="blackAlpha.900">
         {/* Hero section with playlist details */}
         <Box 
-          bgGradient={`linear(to-b, ${generateColor(playlist?.name)}33, gray.900)`} 
-          pt={10} 
-          pb={6}
-          px={{ base: 4, md: 10 }}
+          bg="rgba(20, 20, 30, 0.8)"
+          py={10} 
+          borderBottom="1px solid"
+          borderColor="whiteAlpha.200"
+          px={{ base: 4, lg: 8 }}
         >
           <Container maxW="container.xl">
             <Flex 
@@ -224,7 +225,7 @@ const PlaylistDetailPage = () => {
                 <Button 
                   mt={4}
                   leftIcon={<FaPlay />}
-                  colorScheme="purple"
+                  colorScheme="red"
                   size="lg"
                   isDisabled={!playlist?.tracks?.length}
                 >
@@ -236,33 +237,38 @@ const PlaylistDetailPage = () => {
         </Box>
         
         {/* Playlist tracks */}
-        <Container maxW="container.xl" py={8}>
+        <Container maxW="container.xl" py={8} px={{ base: 4, lg: 8 }}>
           {playlist?.tracks?.length > 0 ? (
             <>
               <Heading as="h3" size="md" color="white" mb={4}>
                 Tracks
               </Heading>
               
-              <VStack 
-                spacing={1} 
-                align="stretch" 
-                divider={<Divider borderColor="whiteAlpha.100" />}
-                bg="gray.800"
+              <Box
+                bg="rgba(20, 20, 30, 0.8)"
                 borderRadius="lg"
+                border="1px solid"
+                borderColor="whiteAlpha.200"
                 overflow="hidden"
+                p={{ base: 4, md: 6 }}
               >
-                {playlist.tracks.map((track, index) => (
-                  <PlaylistTrackItem 
-                    key={`${track.id}-${index}`} 
-                    track={track} 
-                    index={index} 
-                    playlistId={id}
-                  />
+                {/* Replace PlaylistTrackItem with SampleRow */}
+                {playlist.tracks.map((track) => (
+                  <SampleRow key={track.id || `track-${Math.random()}`} track={track} />
                 ))}
-              </VStack>
+              </Box>
             </>
           ) : (
-            <VStack spacing={6} py={10} align="center">
+            <VStack 
+              spacing={6} 
+              py={10} 
+              align="center"
+              bg="rgba(20, 20, 30, 0.8)"
+              borderRadius="lg"
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              p={8}
+            >
               <Icon as={MdMusicNote} fontSize="5xl" color="gray.500" />
               <Heading as="h3" size="md" color="gray.400">
                 This playlist is empty
@@ -273,7 +279,7 @@ const PlaylistDetailPage = () => {
               <Button 
                 as={Link}
                 to="/explore"
-                colorScheme="purple"
+                colorScheme="red"
                 variant="outline"
               >
                 Discover Tracks

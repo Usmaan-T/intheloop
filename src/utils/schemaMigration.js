@@ -36,6 +36,39 @@ export const normalizeSample = (sample) => {
 };
 
 /**
+ * Normalizes a user document to ensure it has all required fields
+ * @param {Object} user - The user object to normalize
+ * @returns {Object} - The normalized user object
+ */
+export const normalizeUser = (user) => {
+  if (!user) return null;
+
+  return {
+    // Preserve existing ID and essential fields
+    id: user.id || `user-${Date.now()}`,
+    email: user.email || '',
+    displayName: user.displayName || '',
+    
+    // Add username if not exists (for backward compatibility)
+    username: user.username || user.displayName || '',
+    
+    // Ensure these arrays exist
+    likes: Array.isArray(user.likes) ? user.likes : [], // Add likes array if it doesn't exist
+    following: Array.isArray(user.following) ? user.following : [],
+    followers: Array.isArray(user.followers) ? user.followers : [],
+    
+    // Only include these fields if they exist in the original
+    ...(user.photoURL ? { photoURL: user.photoURL } : {}),
+    ...(user.bio ? { bio: user.bio } : { bio: '' }),
+    
+    // Add timestamps if they don't exist
+    createdAt: user.createdAt || new Date(),
+    lastLogin: user.lastLogin || new Date(),
+    updatedAt: new Date()
+  };
+};
+
+/**
  * Updates all samples in the database to have a consistent schema
  * @returns {Promise<{success: boolean, updated: number, errors: number}>}
  */
@@ -129,15 +162,67 @@ export const migrateAllPlaylists = async () => {
 };
 
 /**
+ * Updates all users in the database to have a consistent schema
+ * @returns {Promise<{success: boolean, updated: number, errors: number}>}
+ */
+export const migrateAllUsers = async () => {
+  try {
+    console.log('Starting user migration...');
+    const usersRef = collection(firestore, 'users');
+    const querySnapshot = await getDocs(usersRef);
+    
+    // Use batch writes for better performance and atomicity
+    const batch = writeBatch(firestore);
+    let updated = 0;
+    let errors = 0;
+    
+    // Process each document
+    querySnapshot.forEach((docSnapshot) => {
+      try {
+        const userId = docSnapshot.id;
+        const originalData = docSnapshot.data();
+        
+        // Create normalized version of the user
+        const normalizedData = normalizeUser({
+          id: userId,
+          ...originalData
+        });
+        
+        // Add to batch
+        const userRef = doc(firestore, 'users', userId);
+        batch.update(userRef, normalizedData);
+        updated++;
+      } catch (err) {
+        console.error(`Error processing user document: ${docSnapshot.id}`, err);
+        errors++;
+      }
+    });
+    
+    // Commit the batch
+    await batch.commit();
+    console.log(`User migration completed: ${updated} documents updated, ${errors} errors`);
+    
+    return { success: true, updated, errors };
+  } catch (error) {
+    console.error('User migration failed:', error);
+    return { success: false, updated: 0, errors: 1, error };
+  }
+};
+
+/**
  * Run a complete migration of all relevant collections
  */
 export const runFullMigration = async () => {
   const samplesResult = await migrateAllSamples();
   const playlistsResult = await migrateAllPlaylists();
+  const usersResult = await migrateAllUsers(); // Add users migration
   
   return {
     samples: samplesResult,
     playlists: playlistsResult,
-    success: samplesResult.success && playlistsResult.success
+    users: usersResult, // Include users results
+    success: samplesResult.success && 
+             playlistsResult.success && 
+             usersResult.success
   };
 };

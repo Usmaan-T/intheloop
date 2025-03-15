@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useState } from 'react';
 import {
   Box,
   Flex,
@@ -6,7 +7,6 @@ import {
   Heading,
   Link,
   HStack,
-  Image,
   Spacer,
   IconButton,
   useColorModeValue,
@@ -27,14 +27,20 @@ import {
   PopoverBody,
   Divider,
   useOutsideClick,
+  Portal,
+  Center,
+  Spinner,
+  CloseButton,
+  InputRightElement
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon, ChevronDownIcon, SearchIcon } from '@chakra-ui/icons';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
 import { useLogout } from '../../hooks/useLogout';
 import { motion } from 'framer-motion';
-import { useLocation, Link as RouterLink } from 'react-router-dom';
+import { useLocation, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers } from 'react-icons/fa';
+import useFindUsers from '../../hooks/useFindUsers';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -46,6 +52,7 @@ const NavBar = () => {
   const { isOpen: isSearchOpen, onOpen: onSearchOpen, onClose: onSearchClose } = useDisclosure();
   const searchRef = useRef();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useOutsideClick({
     ref: searchRef,
@@ -64,6 +71,48 @@ const NavBar = () => {
 
   const isActive = (path) => location.pathname === path;
 
+  const { 
+    users, 
+    loading: searchLoading, 
+    error: searchError, 
+    searchUsers, 
+    clearSearch 
+  } = useFindUsers();
+  
+  const [searchValue, setSearchValue] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef();
+  
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+    setSearchValue(value);
+    
+    if (value.length >= 2) {
+      searchUsers(value);
+    } else if (value.length === 0) {
+      clearSearch();
+    }
+  };
+  
+  useOutsideClick({
+    ref: searchInputRef,
+    handler: () => {
+      setIsSearchFocused(false);
+    }
+  });
+  
+  const handleUserSelect = (user) => {
+    if (!user || !user.id) return;
+    
+    // Navigate to the user profile page
+    navigate(`/user/${user.id}`);
+    
+    // Clear search state
+    setIsSearchFocused(false);
+    clearSearch();
+    setSearchValue('');
+  };
+
   return (
     <MotionBox 
       initial={{ opacity: 0, y: -20 }}
@@ -81,13 +130,6 @@ const NavBar = () => {
       <Flex align="center">
         {/* Logo and Site Name */}
         <HStack spacing={3} as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-          {/* <Image 
-            src="/images/intheloop.png" 
-            alt="Logo" 
-            boxSize="40px"
-            transition="transform 0.3s ease"
-            _hover={{ transform: 'scale(1.1)' }}
-          /> */}
           <Heading as="h1" size="lg" fontWeight="bold">
             In the Loop
           </Heading>
@@ -95,21 +137,106 @@ const NavBar = () => {
 
         <Spacer />
 
-        {/* Search Bar */}
-        <Box display={{ base: 'none', md: 'block' }} width="30%" ref={searchRef}>
+        {/* Updated Search Bar */}
+        <Box 
+          display={{ base: 'none', md: 'block' }} 
+          width="30%" 
+          position="relative"
+          ref={searchInputRef}
+        >
           <InputGroup>
             <InputLeftElement pointerEvents="none">
               <SearchIcon color="gray.300" />
             </InputLeftElement>
             <Input 
-              placeholder="Search..." 
+              placeholder="Search users..." 
               variant="filled" 
               bg="whiteAlpha.200" 
               _hover={{ bg: "whiteAlpha.300" }} 
               _focus={{ bg: "whiteAlpha.400" }} 
               borderRadius="full"
+              value={searchValue}
+              onChange={handleSearchInput}
+              onFocus={() => setIsSearchFocused(true)}
             />
+            {searchValue && (
+              <InputRightElement>
+                {searchLoading ? (
+                  <Spinner size="sm" color="gray.300" />
+                ) : (
+                  <CloseButton 
+                    size="sm"
+                    onClick={() => {
+                      setSearchValue('');
+                      clearSearch();
+                    }} 
+                  />
+                )}
+              </InputRightElement>
+            )}
           </InputGroup>
+          
+          {/* Search Results Dropdown */}
+          {isSearchFocused && searchValue.length >= 2 && (
+            <Box
+              position="absolute"
+              top="100%"
+              left={0}
+              right={0}
+              mt={2}
+              bg="gray.800"
+              boxShadow="lg"
+              borderRadius="md"
+              overflow="hidden"
+              zIndex={10}
+            >
+              {searchLoading ? (
+                <Center py={4}>
+                  <Spinner size="sm" color="purple.500" mr={2} />
+                  <Text>Searching...</Text>
+                </Center>
+              ) : searchError ? (
+                <Box p={4} color="red.300">
+                  Error: {searchError}
+                </Box>
+              ) : users.length > 0 ? (
+                <VStack spacing={0} align="stretch">
+                  {users.map(user => (
+                    <Box 
+                      key={user.id}
+                      p={3}
+                      cursor="pointer"
+                      _hover={{ bg: "whiteAlpha.100" }}
+                      onClick={() => handleUserSelect(user)}
+                      display="flex"
+                      alignItems="center"
+                    >
+                      <Avatar 
+                        size="sm" 
+                        src={user.photoURL} 
+                        name={user.username || user.displayName}
+                        mr={3}
+                      />
+                      <Box>
+                        <Text fontWeight="medium">
+                          {user.username || user.displayName || 'Unnamed User'}
+                        </Text>
+                        {user.bio && (
+                          <Text fontSize="xs" color="gray.400" noOfLines={1}>
+                            {user.bio}
+                          </Text>
+                        )}
+                      </Box>
+                    </Box>
+                  ))}
+                </VStack>
+              ) : searchValue.length >= 2 ? (
+                <Box p={4} textAlign="center">
+                  <Text>No users found matching "{searchValue}"</Text>
+                </Box>
+              ) : null}
+            </Box>
+          )}
         </Box>
 
         <Spacer />

@@ -15,140 +15,166 @@ import {
   Spinner,
   useToast,
   Divider,
+  Flex,
+  Card,
+  CardHeader,
+  CardBody,
+  Badge
 } from '@chakra-ui/react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
 import NavBar from '../../components/Navbar/NavBar';
-import { migrateAllSamples, migrateAllPlaylists, runFullMigration } from '../../utils/schemaMigration';
+import Footer from '../../components/footer/Footer';
+import { migrateAllSamples, migrateAllPlaylists, runFullMigration, migrateAllUsers } from '../../utils/schemaMigration';
+
+const ADMIN_USER_IDS = [
+  // Add your admin user IDs here
+  "ydweC38oMnXgd1BxKkj574Vrsnn2"
+];
+
+const MigrationCard = ({ title, description, onMigrate, isLoading, result }) => (
+  <Card bg="rgba(20, 20, 30, 0.8)" borderColor="whiteAlpha.300" borderWidth="1px" overflow="hidden">
+    <CardHeader pb={2}>
+      <Heading size="md" color="white">{title}</Heading>
+    </CardHeader>
+    <CardBody>
+      <Text color="gray.300" mb={4}>{description}</Text>
+      
+      <Flex justify="space-between" align="center">
+        <Button 
+          onClick={onMigrate} 
+          colorScheme="red" 
+          isLoading={isLoading}
+          loadingText="Migrating..."
+        >
+          Run Migration
+        </Button>
+        
+        {result && (
+          <Badge 
+            colorScheme={result.success ? "green" : "red"}
+            p={2}
+          >
+            {result.success 
+              ? `Success (${result.updated} updated)` 
+              : "Failed"}
+          </Badge>
+        )}
+      </Flex>
+    </CardBody>
+  </Card>
+);
 
 const SchemaMigrationPage = () => {
+  const [loading, setLoading] = useState({
+    all: false,
+    samples: false,
+    playlists: false,
+    users: false
+  });
+  const [results, setResults] = useState({
+    all: null,
+    samples: null,
+    playlists: null,
+    users: null
+  });
+  
   const [user] = useAuthState(auth);
-  const [isLoading, setIsLoading] = useState(false);
-  const [results, setResults] = useState(null);
   const toast = useToast();
-
-  // Check if user is admin - you'd normally check a custom claim or admin flag in Firestore
-  const isAdmin = user && (user.email === 'utariq2004@gmail.com');
-
-  const handleMigrateSamples = async () => {
-    setIsLoading(true);
+  
+  // Check if current user is an admin
+  const isAdmin = user && ADMIN_USER_IDS.includes(user.uid);
+  
+  const runMigration = async (type) => {
+    if (!isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have permission to perform migrations",
+        status: "error",
+        duration: 5000,
+        isClosable: true
+      });
+      return;
+    }
+    
+    setLoading(prev => ({ ...prev, [type]: true }));
+    
     try {
-      const result = await migrateAllSamples();
-      setResults(result);
+      let result;
+      
+      switch (type) {
+        case 'all':
+          result = await runFullMigration();
+          break;
+        case 'samples':
+          result = await migrateAllSamples();
+          break;
+        case 'playlists':
+          result = await migrateAllPlaylists();
+          break;
+        case 'users':
+          result = await migrateAllUsers();
+          break;
+        default:
+          throw new Error(`Unknown migration type: ${type}`);
+      }
+      
+      setResults(prev => ({ ...prev, [type]: result }));
       
       toast({
-        title: result.success ? 'Migration Successful' : 'Migration Failed',
+        title: result.success ? "Migration Successful" : "Migration Failed",
         description: result.success 
-          ? `Updated ${result.updated} samples with ${result.errors} errors` 
-          : 'Failed to update samples',
-        status: result.success ? 'success' : 'error',
+          ? `Successfully updated ${result.updated} documents` 
+          : `Migration failed with ${result.errors} errors`,
+        status: result.success ? "success" : "error",
         duration: 5000,
-        isClosable: true,
+        isClosable: true
       });
     } catch (error) {
-      console.error('Migration error:', error);
-      setResults({ success: false, error: error.message });
+      console.error(`Error during ${type} migration:`, error);
+      setResults(prev => ({ 
+        ...prev, 
+        [type]: { success: false, error: error.message, updated: 0, errors: 1 } 
+      }));
       
       toast({
-        title: 'Migration Failed',
+        title: "Migration Error",
         description: error.message,
-        status: 'error',
+        status: "error",
         duration: 5000,
-        isClosable: true,
+        isClosable: true
       });
     } finally {
-      setIsLoading(false);
+      setLoading(prev => ({ ...prev, [type]: false }));
     }
   };
-
-  const handleMigratePlaylists = async () => {
-    setIsLoading(true);
-    try {
-      const result = await migrateAllPlaylists();
-      setResults(result);
-      
-      toast({
-        title: result.success ? 'Migration Successful' : 'Migration Failed',
-        description: result.success 
-          ? `Updated ${result.updated} playlists with ${result.errors} errors` 
-          : 'Failed to update playlists',
-        status: result.success ? 'success' : 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error('Migration error:', error);
-      setResults({ success: false, error: error.message });
-      
-      toast({
-        title: 'Migration Failed',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleFullMigration = async () => {
-    setIsLoading(true);
-    try {
-      const result = await runFullMigration();
-      setResults(result);
-      
-      toast({
-        title: result.success ? 'Full Migration Successful' : 'Migration Failed',
-        description: result.success 
-          ? `Updated ${result.samples.updated} samples and ${result.playlists.updated} playlists` 
-          : 'Failed to complete migration',
-        status: result.success ? 'success' : 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } catch (error) {
-      console.error('Migration error:', error);
-      setResults({ success: false, error: error.message });
-      
-      toast({
-        title: 'Migration Failed',
-        description: error.message,
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  
   if (!user) {
     return (
       <>
         <NavBar />
-        <Container maxW="container.md" py={10}>
-          <Alert status="error">
+        <Container maxW="container.lg" py={10}>
+          <Alert status="error" borderRadius="md">
             <AlertIcon />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>Please log in to access this page.</AlertDescription>
+            Please login to access this page
           </Alert>
         </Container>
+        <Footer />
       </>
     );
   }
-
+  
   if (!isAdmin) {
     return (
       <>
         <NavBar />
-        <Container maxW="container.md" py={10}>
-          <Alert status="error">
+        <Container maxW="container.lg" py={10}>
+          <Alert status="error" borderRadius="md">
             <AlertIcon />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>You do not have admin privileges to perform schema migrations.</AlertDescription>
+            You don't have permission to access this page
           </Alert>
         </Container>
+        <Footer />
       </>
     );
   }
@@ -156,93 +182,65 @@ const SchemaMigrationPage = () => {
   return (
     <>
       <NavBar />
-      <Container maxW="container.md" py={10}>
-        <VStack spacing={8} align="stretch">
-          <Heading as="h1" size="xl" textAlign="center" color="white">
-            Database Schema Migration
-          </Heading>
-          
-          <Alert status="warning">
-            <AlertIcon />
+      <Box bgColor="blackAlpha.900" minH="calc(100vh - 80px)">
+        <Container maxW="container.lg" py={10}>
+          <VStack spacing={8} align="stretch">
             <Box>
-              <AlertTitle>Warning - Irreversible Changes!</AlertTitle>
-              <AlertDescription>
-                <Text mb={2}>
-                  This migration will permanently modify your database documents and cannot be automatically reverted.
-                </Text>
-                <Text fontWeight="bold">
-                  Please export a backup of your Firestore data from the Firebase console before proceeding.
-                </Text>
-              </AlertDescription>
-            </Box>
-          </Alert>
-          
-          <VStack spacing={4} bg="gray.800" p={6} borderRadius="md">
-            <Heading as="h2" size="md" color="white">Available Migrations</Heading>
-            
-            <HStack w="full" justify="space-between">
-              <Text color="white">Migrate All Samples</Text>
-              <Button 
-                colorScheme="purple" 
-                onClick={handleMigrateSamples}
-                isLoading={isLoading}
-                loadingText="Migrating..."
-                isDisabled={isLoading}
-              >
-                Run Migration
-              </Button>
-            </HStack>
-            
-            <Divider />
-            
-            <HStack w="full" justify="space-between">
-              <Text color="white">Migrate All Playlists</Text>
-              <Button 
-                colorScheme="purple" 
-                onClick={handleMigratePlaylists}
-                isLoading={isLoading}
-                loadingText="Migrating..."
-                isDisabled={isLoading}
-              >
-                Run Migration
-              </Button>
-            </HStack>
-            
-            <Divider />
-            
-            <HStack w="full" justify="space-between">
-              <Text color="white">Full Database Migration</Text>
-              <Button 
-                colorScheme="red" 
-                onClick={handleFullMigration}
-                isLoading={isLoading}
-                loadingText="Migrating..."
-                isDisabled={isLoading}
-              >
-                Run All Migrations
-              </Button>
-            </HStack>
-          </VStack>
-          
-          {isLoading && (
-            <VStack py={4}>
-              <Spinner size="xl" color="purple.500" />
-              <Text color="white">Migration in progress...</Text>
-            </VStack>
-          )}
-          
-          {results && (
-            <Box bg="gray.800" p={6} borderRadius="md">
-              <Heading as="h3" size="sm" mb={4} color="white">
-                Migration Results:
+              <Heading as="h1" size="xl" color="white" mb={4}>
+                Database Schema Migration
               </Heading>
-              <Code p={4} w="full" borderRadius="md" whiteSpace="pre-wrap">
-                {JSON.stringify(results, null, 2)}
-              </Code>
+              <Text color="gray.300">
+                This page allows you to run data migrations to update the schema of documents in Firestore. 
+                Only administrators can perform these operations.
+              </Text>
+              
+              <Alert status="warning" mt={4} borderRadius="md">
+                <AlertIcon />
+                Make sure to backup your database before running migrations.
+              </Alert>
             </Box>
-          )}
-        </VStack>
-      </Container>
+            
+            <Divider borderColor="whiteAlpha.200" />
+            
+            <VStack spacing={4} align="stretch">
+              <MigrationCard 
+                title="Migrate Everything"
+                description="Run all migrations at once (samples, playlists, users)"
+                onMigrate={() => runMigration('all')}
+                isLoading={loading.all}
+                result={results.all}
+              />
+              
+              <Divider borderColor="whiteAlpha.200" />
+              
+              <MigrationCard 
+                title="Migrate Sample Documents"
+                description="Update all sample documents to conform to the latest schema"
+                onMigrate={() => runMigration('samples')}
+                isLoading={loading.samples}
+                result={results.samples}
+              />
+              
+              <MigrationCard 
+                title="Migrate Playlist Documents"
+                description="Update all playlist documents and normalize track objects within them"
+                onMigrate={() => runMigration('playlists')}
+                isLoading={loading.playlists}
+                result={results.playlists}
+              />
+              
+              <MigrationCard 
+                title="Migrate User Documents"
+                description="Update all user documents to add likes field and normalize structure"
+                onMigrate={() => runMigration('users')}
+                isLoading={loading.users}
+                result={results.users}
+              />
+            </VStack>
+          </VStack>
+        </Container>
+      </Box>
+      <Footer />
     </>
   );
 };

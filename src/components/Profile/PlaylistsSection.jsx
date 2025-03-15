@@ -6,7 +6,7 @@ import {
 import { AddIcon } from '@chakra-ui/icons';
 import Playlist from '../Playlist/Playlist';
 
-const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick }) => {
+const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick, showHeader = true }) => {
   // Example playlists with local fallback images instead of external placeholder service
   const examplePlaylists = [
     { 
@@ -44,18 +44,21 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick }) => {
   
   return (
     <Box mb={10}>
-      <Flex justify="space-between" align="center" mb={4}>
-        <Heading as="h2" size="xl" color="white">
-          My Playlists
-        </Heading>
-        <IconButton
-          icon={<AddIcon />}
-          colorScheme="purple"
-          borderRadius="full"
-          aria-label="Create new playlist"
-          onClick={onAddClick}
-        />
-      </Flex>
+      {/* Only show header if showHeader is true */}
+      {showHeader && (
+        <Flex justify="space-between" align="center" mb={4}>
+          <Heading as="h2" size="xl" color="white">
+            My Playlists
+          </Heading>
+          <IconButton
+            icon={<AddIcon />}
+            colorScheme="purple"
+            borderRadius="full"
+            aria-label="Create new playlist"
+            onClick={onAddClick}
+          />
+        </Flex>
+      )}
       
       <Box
         bg="rgba(20, 20, 30, 0.8)"
@@ -83,9 +86,10 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick }) => {
                   base: '1fr',
                   sm: 'repeat(2, 1fr)',
                   md: 'repeat(3, 1fr)',
-                  lg: 'repeat(4, 1fr)'
+                  lg: 'repeat(4, 1fr)',
+                  xl: 'repeat(5, 1fr)'  // Add an extra column for extra wide screens
                 }}
-                gap={4}
+                gap={6}  // Increase gap from 4 to 6
                 mb={4}
               >
                 {displayPlaylists.map(playlist => (

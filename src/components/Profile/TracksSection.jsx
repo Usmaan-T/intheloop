@@ -4,12 +4,17 @@ import {
 } from '@chakra-ui/react';
 import SampleRow from '../Samples/SampleRow';
 
-const TracksSection = ({ tracks, isLoading, error }) => {
+const TracksSection = ({ tracks, isLoading, error, showHeader = true }) => {
   if (isLoading) return <Text>Loading tracks...</Text>;
   if (error) return <Text>Error: {error.message}</Text>;
   
   return (
-    <>
+    <Box mb={8}>
+      {showHeader && (
+        <Heading as="h2" size="lg" color="white" mb={4}>
+          Your Samples
+        </Heading>
+      )}
       <Heading as="h2" size="xl" mb={6} color={'white'}>
         Most Recent Samples
       </Heading>
@@ -18,7 +23,7 @@ const TracksSection = ({ tracks, isLoading, error }) => {
       ) : (
         <Box
           bg={useColorModeValue('gray.800', 'gray.700')}
-          p={4}
+          p={6}  // Increase padding from 4 to 6
           borderRadius="lg"
           boxShadow="md"
         >
@@ -27,7 +32,7 @@ const TracksSection = ({ tracks, isLoading, error }) => {
           ))}
         </Box>
       )}
-    </>
+    </Box>
   );
 };
 
