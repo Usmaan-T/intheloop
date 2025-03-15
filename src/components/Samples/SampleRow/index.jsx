@@ -10,13 +10,13 @@ import {
   HStack,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload } from 'react-icons/fa';
-import Waveform from '../Waveform/Waveform';
-import useLikeSample from '../../hooks/useLikeSample';
-import useAudioPlayback from '../../hooks/useAudioPlayback';
-import useDownloadTrack from '../../hooks/useDownloadTrack';
-import ArtistInfo from './SampleRow/ArtistInfo';
-import SampleCover from './SampleRow/SampleCover';
-import TagsList from './SampleRow/TagsList';
+import Waveform from '../../Waveform/Waveform';
+import useLikeSample from '../../../hooks/useLikeSample';
+import useAudioPlayback from '../../../hooks/useAudioPlayback';
+import useDownloadTrack from '../../../hooks/useDownloadTrack';
+import ArtistInfo from './ArtistInfo';
+import SampleCover from './SampleCover';
+import TagsList from './TagsList';
 
 const SampleRow = ({ track }) => {
   // Use our custom hooks for audio playback and download
