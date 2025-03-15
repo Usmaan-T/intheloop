@@ -34,7 +34,7 @@ const LoggedInHome = () => {
     samples: popularSamples, 
     loading: samplesLoading, 
     error: samplesError 
-  } = usePopularSamples(5); // Limit to top 5 samples
+  } = usePopularSamples(5); // Limit to top 5 samples by likes
 
   return (
     <>
