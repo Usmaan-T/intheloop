@@ -14,9 +14,7 @@ const useUploadFiles = () => {
   const [inputs, setInputs] = useState({
     name: '',
     key: '',
-    bpm: '',
-    coverImage: null,
-    tags: [], // Add tags field
+    bpm: ''
   });
 
   const uploadAudio = async () => {
@@ -48,26 +46,12 @@ const useUploadFiles = () => {
         userId: user.uid,
         audioUrl: downloadURL,
         createdAt: serverTimestamp(),
-        likes: 0, // Make sure this is initialized to 0
+        likes: 0,
         comments: [],
         bpm: inputs.bpm,
         key: inputs.key,
-        name: inputs.name,
-        tags: inputs.tags || [], // Include tags in the post
+        name: inputs.name
       };
-
-      // Handle cover image upload if provided
-      if (inputs.coverImage) {
-        const imageFileName = `covers/${user.uid}/${Date.now()}_${inputs.coverImage.name}`;
-        const imageStorageRef = ref(storage, imageFileName);
-        
-        // Upload image
-        await uploadBytes(imageStorageRef, inputs.coverImage);
-        const imageURL = await getDownloadURL(imageStorageRef);
-        
-        // Add image URL to post data
-        post.coverImage = imageURL;
-      }
 
       // Save the post object in Firestore under the "posts" collection
       await addDoc(collection(firestore, 'posts'), post);
