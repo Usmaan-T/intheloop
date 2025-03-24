@@ -9,11 +9,12 @@ import {
   IconButton,
   HStack,
 } from '@chakra-ui/react';
-import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload } from 'react-icons/fa';
+import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye } from 'react-icons/fa';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
 import useAudioPlayback from '../../hooks/useAudioPlayback';
 import useDownloadTrack from '../../hooks/useDownloadTrack';
+import useTrackSampleView from '../../hooks/useTrackSampleView'; // Add this import
 import ArtistInfo from './SampleRow/ArtistInfo';
 import SampleCover from './SampleRow/SampleCover';
 import TagsList from './SampleRow/TagsList';
@@ -23,6 +24,13 @@ const SampleRow = ({ track }) => {
   const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
   const { downloadTrack, downloadLoading } = useDownloadTrack();
   const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
+  
+  // Track when this sample is viewed
+  useTrackSampleView(track.id);
+  
+  // Get popularity metrics for display
+  const viewCount = track.stats?.views || 0;
+  const downloadCount = track.stats?.downloads || 0;
   
   return (
     <Box
@@ -138,6 +146,40 @@ const SampleRow = ({ track }) => {
             </Tooltip>
           </HStack>
         </Flex>
+      </Flex>
+      
+      {/* Add popularity metrics display */}
+      <Flex px={4} pb={2} justifyContent="flex-end" color="gray.400" fontSize="xs">
+        <HStack spacing={4}>
+          <Tooltip label="Views">
+            <HStack spacing={1}>
+              <Icon as={FaEye} />
+              <Text>{viewCount}</Text>
+            </HStack>
+          </Tooltip>
+          
+          <Tooltip label="Downloads">
+            <HStack spacing={1}>
+              <Icon as={FaDownload} />
+              <Text>{downloadCount}</Text>
+            </HStack>
+          </Tooltip>
+          
+          <Tooltip label="Likes">
+            <HStack spacing={1}>
+              <Icon as={FaHeart} />
+              <Text>{likeCount}</Text>
+            </HStack>
+          </Tooltip>
+          
+          {track.popularityScore && (
+            <Tooltip label="Popularity Score">
+              <Badge colorScheme="purple" variant="solid" fontSize="xs">
+                {Math.round(track.popularityScore)}
+              </Badge>
+            </Tooltip>
+          )}
+        </HStack>
       </Flex>
       
       {/* Waveform section - always visible */}

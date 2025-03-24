@@ -42,7 +42,7 @@ const LoggedInHome = () => {
     samples: popularSamples,
     loading: samplesLoading,
     error: samplesError,
-  } = usePopularSamples(5);
+  } = usePopularSamples(5, timeRange);
 
   const headingSize = useBreakpointValue({ base: 'xl', md: '2xl' });
 
@@ -246,6 +246,15 @@ const LoggedInHome = () => {
                     _hover={{ bg: 'whiteAlpha.100' }}
                   >
                     This Month
+                  </Button>
+                  <Button
+                    colorScheme={timeRange === 'allTime' ? 'red' : 'gray'}
+                    onClick={() => setTimeRange('allTime')}
+                    borderColor="whiteAlpha.300"
+                    fontWeight="medium"
+                    _hover={{ bg: 'whiteAlpha.100' }}
+                  >
+                    All Time
                   </Button>
                 </ButtonGroup>
 
