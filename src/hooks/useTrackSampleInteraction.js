@@ -2,10 +2,12 @@ import {
   doc, 
   runTransaction, 
   serverTimestamp, 
-  increment
+  increment,
+  getDoc,
 } from 'firebase/firestore';
 import { firestore } from '../firebase/firebase';
 import COLLECTIONS from '../firebase/collections';
+import { calculateUserPopularity } from './useUserPopularity';
 
 /**
  * Tracks an interaction with a sample (view, like, download)
@@ -97,6 +99,7 @@ export const trackSampleInteraction = async (sampleId, interactionType, userId =
 const updatePopularityScores = async (sampleId) => {
   try {
     const sampleRef = doc(firestore, COLLECTIONS.POSTS, sampleId);
+    let userId = null;
     
     await runTransaction(firestore, async (transaction) => {
       const sampleDoc = await transaction.get(sampleRef);
@@ -106,6 +109,7 @@ const updatePopularityScores = async (sampleId) => {
       }
       
       const data = sampleDoc.data();
+      userId = data.userId; // Store the user ID for later
       const stats = data.stats || {
         views: 0,
         likes: 0,
@@ -137,6 +141,12 @@ const updatePopularityScores = async (sampleId) => {
         }
       });
     });
+    
+    // Also update user popularity score for the track owner
+    if (userId) {
+      await calculateUserPopularity(userId);
+    }
+    
   } catch (error) {
     console.error('Error updating popularity scores:', error);
   }

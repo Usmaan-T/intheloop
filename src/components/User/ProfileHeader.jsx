@@ -3,22 +3,28 @@ import {
   Box,
   Container,
   Flex,
-  Heading,
   Text,
   Avatar,
-  HStack
+  Heading,
+  HStack,
+  Badge,
+  Tooltip,
 } from '@chakra-ui/react';
 import FollowButton from './FollowButton';
+import useUserPopularity from '../../hooks/useUserPopularity';
 
 const ProfileHeader = ({ 
   user, 
-  currentUser, 
   stats = { samples: 0, playlists: 0, followers: 0 },
   showFollowButton = true,
-  onFollowChange = null, // Add this new prop
-  children
+  currentUser = null,
+  onFollowChange = () => {},
+  children 
 }) => {
   if (!user) return null;
+  
+  // Use our popularity hook
+  const { popularityScore } = useUserPopularity(user.id);
   
   return (
     <Box bg="rgba(20, 20, 30, 0.8)" py={10} borderBottom="1px solid" borderColor="whiteAlpha.200">
@@ -28,8 +34,8 @@ const ProfileHeader = ({
           align={{ base: 'center', md: 'flex-start' }}
           gap={8}
         >
-          <Avatar 
-            size="2xl" 
+          <Avatar
+            size="2xl"
             name={user.username || user.displayName || 'User'}
             src={user.photoURL}
             border="4px solid"
@@ -40,6 +46,13 @@ const ProfileHeader = ({
             <Heading color="white" size="xl">
               {user.username || user.displayName || 'User'}
             </Heading>
+            
+            {/* Heat badge (weekly popularity) */}
+            <Tooltip label="Weekly popularity score of all user's tracks - aka Heat">
+              <Badge colorScheme="red" px={2} py={1} mt={2} fontSize="sm">
+                Heat: {popularityScore?.weekly || 0}
+              </Badge>
+            </Tooltip>
             
             {user.bio && (
               <Text mt={2} color="gray.300">
@@ -63,6 +76,11 @@ const ProfileHeader = ({
                   {stats.followers || user.followers?.length || 0}
                 </Text> Followers
               </Text>
+              <Text color="gray.400">
+                <Text as="span" fontWeight="bold" color="white">
+                  {popularityScore?.weekly || 0}
+                </Text> Popularity
+              </Text>
             </HStack>
             
             {showFollowButton && currentUser && (
@@ -70,7 +88,7 @@ const ProfileHeader = ({
                 <FollowButton 
                   userId={user.id} 
                   currentUser={currentUser} 
-                  onFollowChange={onFollowChange} // Pass the callback through
+                  onFollowChange={onFollowChange}
                 />
               </Box>
             )}

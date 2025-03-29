@@ -171,12 +171,19 @@ const SampleRow = ({ track }) => {
               <Text>{likeCount}</Text>
             </HStack>
           </Tooltip>
-          
-          {track.popularityScore && (
+
+          {track.popularityScores && (
             <Tooltip label="Popularity Score">
-              <Badge colorScheme="purple" variant="solid" fontSize="xs">
-                {Math.round(track.popularityScore)}
-              </Badge>
+              <HStack spacing={1}>
+                <Badge colorScheme="purple" variant="solid" fontSize="xs">
+                  {Math.round(track.popularityScores.allTime || 0)}
+                </Badge>
+                {track.popularityScores?.daily && (
+                  <Badge colorScheme="red" variant="solid" fontSize="xs">
+                    +{Math.round(track.popularityScores.daily)}
+                  </Badge>
+                )}
+              </HStack>
             </Tooltip>
           )}
         </HStack>
