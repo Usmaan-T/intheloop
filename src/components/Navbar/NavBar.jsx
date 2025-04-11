@@ -1,4 +1,3 @@
-
 import React, { useRef, useState } from 'react';
 import {
   Box,
@@ -278,6 +277,7 @@ const NavBar = () => {
               as={Button} 
               rightIcon={<ChevronDownIcon />} 
               variant="ghost" 
+              color="white"
               _hover={{ bg: "whiteAlpha.200" }}
               _active={{ bg: "whiteAlpha.300" }}
             >
@@ -310,6 +310,7 @@ const NavBar = () => {
                   borderRadius="full" 
                   display="flex" 
                   alignItems="center"
+                  color="white"
                   _hover={{ bg: "whiteAlpha.200" }}
                 >
                   <Avatar size="sm" src={user.photoURL || undefined} mr={2} />
@@ -334,6 +335,7 @@ const NavBar = () => {
                       justifyContent="flex-start" 
                       py={3} 
                       px={4}
+                      color="red.400"
                       borderRadius={0}
                       isLoading={loading}
                       _hover={{ bg: "red.700" }}
@@ -348,7 +350,7 @@ const NavBar = () => {
             <>
               <Button 
                 as={RouterLink} 
-                to="/login" 
+                to="/auth" 
                 variant="ghost" 
                 _hover={{ bg: "whiteAlpha.200" }}
               >
@@ -356,7 +358,7 @@ const NavBar = () => {
               </Button>
               <Button 
                 as={RouterLink} 
-                to="/register" 
+                to="/auth?mode=register" 
                 bg="red.600"
                 _hover={{ bg: "red.700" }}
               >
@@ -446,7 +448,7 @@ const NavBar = () => {
               <Flex p={4} gap={3}>
                 <Button 
                   as={RouterLink} 
-                  to="/login" 
+                  to="/auth" 
                   variant="outline" 
                   flex={1}
                   onClick={onClose}
@@ -455,7 +457,7 @@ const NavBar = () => {
                 </Button>
                 <Button 
                   as={RouterLink} 
-                  to="/register" 
+                  to="/auth?mode=register" 
                   bg="red.600" 
                   _hover={{ bg: "red.700" }} 
                   flex={1}

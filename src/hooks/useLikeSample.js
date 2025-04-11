@@ -11,6 +11,7 @@ import {
   runTransaction
 } from 'firebase/firestore';
 import { useToast } from '@chakra-ui/react';
+import trackSampleInteraction from './useTrackSampleInteraction'; // Add this import
 
 /**
  * Custom hook for liking/unliking samples with proper two-way tracking
@@ -108,6 +109,14 @@ const useLikeSample = (sampleId) => {
           setIsLiked(true);
         }
       });
+      
+      // Track the like/unlike interaction for popularity calculation
+      await trackSampleInteraction(
+        sampleId, 
+        'like', 
+        user.uid, 
+        !isLiked ? false : true // isRemoval parameter is true when unliking
+      );
       
     } catch (error) {
       console.error('Error updating like status:', error);

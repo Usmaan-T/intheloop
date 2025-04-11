@@ -1,86 +1,74 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Box,
   Flex,
   Text,
-  Button,
   Icon,
   Tooltip,
   Badge,
-  Image,
-  Wrap,
-  WrapItem,
-  Tag,
   IconButton,
+  HStack,
   useDisclosure,
-  HStack
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Button,
 } from '@chakra-ui/react';
-import { doc } from 'firebase/firestore';
-import { useDocument } from 'react-firebase-hooks/firestore';
-import { firestore } from '../../firebase/firebase';
+import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
 import Waveform from '../Waveform/Waveform';
-import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload } from 'react-icons/fa';
-import { MdMusicNote, MdPlaylistAdd } from 'react-icons/md';
 import useLikeSample from '../../hooks/useLikeSample';
+import useAudioPlayback from '../../hooks/useAudioPlayback';
+import useDownloadTrack from '../../hooks/useDownloadTrack';
+import useTrackSampleView from '../../hooks/useTrackSampleView';
+import useDeleteSample from '../../hooks/useDeleteSample';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../firebase/firebase';
+import ArtistInfo from './SampleRow/ArtistInfo';
+import SampleCover from './SampleRow/SampleCover';
+import TagsList from './SampleRow/TagsList';
 
-// Color generator function
-const generateColorFromName = (name) => {
-  const colors = ['#8A2BE2', '#4A90E2', '#50C878', '#FF6347', '#FFD700'];
-  if (!name) return colors[0];
-  
-  let sum = 0;
-  for (let i = 0; i < name.length; i++) {
-    sum += name.charCodeAt(i);
-  }
-  return colors[sum % colors.length];
-};
-
-const SampleRow = ({ track }) => {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = React.useRef(null);
-  
-  // Fetch user details from 'users' collection
-  const userDocRef = doc(firestore, 'users', track.userId);
-  const [userDoc, userLoading, userError] = useDocument(userDocRef);
-  const userData = userDoc?.data();
-
-  let artistName = 'Unknown Artist';
-  if (userLoading) artistName = 'Loading...';
-  else if (userError) artistName = 'Error loading user';
-  else if (userData?.username) artistName = userData.username;
-
-  // Add like functionality
+const SampleRow = ({ track, onDelete }) => {
+  // Use our custom hooks for audio playback and download
+  const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
+  const { downloadTrack, downloadLoading } = useDownloadTrack();
   const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
+  const { deleteSample, isDeleting } = useDeleteSample();
+  const [user] = useAuthState(auth);
   
-  // Audio playback controls
-  const handlePlayToggle = () => {
-    if (!audioRef.current) return;
+  // For delete confirmation dialog
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = React.useRef();
+  
+  // Track when this sample is viewed
+  useTrackSampleView(track.id);
+  
+  // Get popularity metrics for display
+  const viewCount = track.stats?.views || 0;
+  const downloadCount = track.stats?.downloads || 0;
+  
+  // Check if current user is the sample owner
+  const isOwner = user && track.userId === user.uid;
+  
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    const success = await deleteSample(
+      track.id,
+      track.audioUrl,
+      track.imageUrl,
+      user?.uid,
+      track.userId
+    );
     
-    if (isPlaying) {
-      audioRef.current.pause();
-    } else {
-      audioRef.current.play();
+    if (success && onDelete) {
+      onDelete(track.id);
     }
     
-    setIsPlaying(!isPlaying);
+    onClose();
   };
   
-  const handleAudioEnd = () => {
-    setIsPlaying(false);
-  };
-  
-  // Download function
-  const handleDownload = () => {
-    if (!track.audioUrl) return;
-    
-    const link = document.createElement('a');
-    link.href = track.audioUrl;
-    link.download = `${track.name || 'sample'}.mp3`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <Box
       bg="rgba(20, 20, 30, 0.8)"
@@ -117,79 +105,20 @@ const SampleRow = ({ track }) => {
             boxShadow="0 0 10px rgba(229, 62, 62, 0.4)"
           />
           
-          {/* Cover Image */}
-          <Box
-            w="60px"
-            h="60px"
-            borderRadius="md"
-            overflow="hidden"
-            border="2px solid"
-            borderColor="whiteAlpha.300"
-            position="relative"
-          >
-            {track.coverImage ? (
-              <Image 
-                src={track.coverImage}
-                alt={track.name}
-                w="100%"
-                h="100%"
-                objectFit="cover"
-                fallback={
-                  <Flex
-                    h="100%"
-                    w="100%"
-                    bg={generateColorFromName(track.name)}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    <Icon as={MdMusicNote} color="white" boxSize={6} />
-                  </Flex>
-                }
-              />
-            ) : (
-              <Flex
-                h="100%"
-                w="100%"
-                bg={generateColorFromName(track.name)}
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Icon as={MdMusicNote} color="white" boxSize={6} />
-              </Flex>
-            )}
-          </Box>
+          {/* Cover Image - Using our new component */}
+          <SampleCover track={track} />
 
           {/* Track Details */}
           <Box flex="1" minW={0}>
             <Text fontWeight="bold" fontSize="md" color="white" noOfLines={1}>
               {track.name}
             </Text>
-            <Text fontSize="sm" color="gray.400" noOfLines={1}>
-              by {artistName}
-            </Text>
             
-            {/* Tags */}
-            {track.tags && track.tags.length > 0 && (
-              <Wrap spacing={1} mt={2}>
-                {track.tags.slice(0, 3).map(tag => ( // Show max 3 tags inline
-                  <WrapItem key={tag}>
-                    <Tag 
-                      size="sm" 
-                      colorScheme="red" 
-                      variant="solid"
-                      borderRadius="full"
-                    >
-                      {tag}
-                    </Tag>
-                  </WrapItem>
-                ))}
-                {track.tags.length > 3 && (
-                  <WrapItem>
-                    <Tag size="sm" variant="subtle">+{track.tags.length - 3}</Tag>
-                  </WrapItem>
-                )}
-              </Wrap>
-            )}
+            {/* Artist Info - Using our new component */}
+            <ArtistInfo userId={track.userId} />
+            
+            {/* Tags - Using our new component */}
+            <TagsList tags={track.tags} />
           </Box>
         </Flex>
 
@@ -247,11 +176,71 @@ const SampleRow = ({ track }) => {
                 isRound
                 colorScheme="whiteAlpha"
                 variant="ghost"
-                onClick={handleDownload}
+                onClick={() => downloadTrack(track)}
+                isLoading={downloadLoading}
+                _hover={{ bg: "whiteAlpha.300" }}
               />
             </Tooltip>
+            
+            {/* Delete button - Only visible to sample owner */}
+            {isOwner && (
+              <Tooltip label="Delete">
+                <IconButton
+                  icon={<FaTrash />}
+                  aria-label="Delete sample"
+                  size="sm"
+                  isRound
+                  colorScheme="red"
+                  variant="ghost"
+                  onClick={onOpen}
+                  isLoading={isDeleting}
+                  _hover={{ bg: "red.700" }}
+                />
+              </Tooltip>
+            )}
           </HStack>
         </Flex>
+      </Flex>
+      
+      {/* Add popularity metrics display */}
+      <Flex px={4} pb={2} justifyContent="flex-end" color="gray.400" fontSize="xs">
+        <HStack spacing={4}>
+          <Tooltip label="Views">
+            <HStack spacing={1}>
+              <Icon as={FaEye} />
+              <Text>{viewCount}</Text>
+            </HStack>
+          </Tooltip>
+          
+          <Tooltip label="Downloads">
+            <HStack spacing={1}>
+              <Icon as={FaDownload} />
+              <Text>{downloadCount}</Text>
+            </HStack>
+          </Tooltip>
+          
+          <Tooltip label="Likes">
+            <HStack spacing={1}>
+              <Icon as={FaHeart} />
+              <Text>{likeCount}</Text>
+            </HStack>
+          </Tooltip>
+
+          {track.popularityScores && (
+            <Tooltip label="Popularity Score">
+              <HStack spacing={1}>
+                <Badge colorScheme="purple" variant="solid" fontSize="xs">
+                  {Math.round(track.popularityScores.allTime || 0)}
+                </Badge>
+                {track.popularityScores?.daily && (
+                  <Badge colorScheme="red" variant="solid" fontSize="xs">
+                    +{Math.round(track.popularityScores.daily)}
+                  </Badge>
+                )}
+              </HStack>
+            </Tooltip>
+          )}
+        </HStack>
       </Flex>
       
       {/* Waveform section - always visible */}
@@ -264,6 +253,39 @@ const SampleRow = ({ track }) => {
           preload="auto"
         />
       </Box>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent bg="gray.800" color="white">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Sample
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete "{track.name}"? This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose} variant="outline">
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="red" 
+                onClick={handleDeleteConfirm} 
+                ml={3}
+                isLoading={isDeleting}
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

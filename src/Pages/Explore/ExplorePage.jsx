@@ -2,65 +2,67 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   Box, 
   Flex, 
-  Spinner, 
   Text, 
+  Spinner, 
   Button, 
   VStack,
   IconButton,
-  useToast
+  useToast,
+  Heading,
+  HStack,
+  Tooltip,
+  Circle,
+  useBreakpointValue,
+  Container
 } from '@chakra-ui/react';
-import { FaRandom, FaChevronUp, FaChevronDown, FaArrowDown } from 'react-icons/fa';
+import { FaRandom, FaChevronUp, FaChevronDown, FaMusic, FaShare } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import SampleCard from '../../components/Explore/SampleCard';
 import useExploreData from '../../hooks/useExploreData';
 import Footer from '../../components/footer/Footer';
-import { keyframes, css } from '@emotion/react';
 
 // Motion components
 const MotionBox = motion(Box);
-
-// Define animations
-const bounceKeyframes = keyframes`
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
-  40% { transform: translateY(-10px) translateX(-50%); }
-  60% { transform: translateY(-5px) translateX(-50%); }
-`;
-
-const pulseKeyframes = keyframes`
-  0% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-  100% { opacity: 0.5; transform: scale(1); }
-`;
-
-const bounceAnimation = css`animation: ${bounceKeyframes} 2s infinite`;
-const pulseAnimation = css`animation: ${pulseKeyframes} 2s infinite`;
+const MotionFlex = motion(Flex);
 
 const ExplorePage = () => {
-  const { samples, loading, error, fetchMoreSamples, hasMore, refreshSamples } = useExploreData();
+  const { samples, loading, error, fetchMoreSamples, hasMore, refreshSamples } = useExploreData(15);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(null);
   const touchStartY = useRef(0);
   const toast = useToast();
-  const [showHint, setShowHint] = useState(true);
+  const [showControls, setShowControls] = useState(true);
+  const [lastInteraction, setLastInteraction] = useState(Date.now());
+  const controlsSize = useBreakpointValue({ base: "md", md: "lg" });
   
+  // Auto-hide controls after inactivity
   useEffect(() => {
-    if (showHint) {
-      const timer = setTimeout(() => {
-        setShowHint(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showHint]);
+    const timer = setTimeout(() => {
+      // Only hide controls if there hasn't been interaction in the last 3 seconds
+      if (Date.now() - lastInteraction > 3000) {
+        setShowControls(false);
+      }
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [lastInteraction]);
+  
+  // Show controls on interaction
+  const handleInteraction = () => {
+    setShowControls(true);
+    setLastInteraction(Date.now());
+  };
   
   const handleNext = useCallback(() => {
-    if (currentIndex >= samples.length - 2 && hasMore) {
+    if (currentIndex >= samples.length - 3 && hasMore) {
       fetchMoreSamples();
     }
     
     if (currentIndex < samples.length - 1) {
       setDirection('up');
       setCurrentIndex(prev => prev + 1);
+      handleInteraction();
     }
   }, [currentIndex, samples, fetchMoreSamples, hasMore]);
   
@@ -68,12 +70,14 @@ const ExplorePage = () => {
     if (currentIndex > 0) {
       setDirection('down');
       setCurrentIndex(prev => prev - 1);
+      handleInteraction();
     }
   }, [currentIndex]);
   
-  // Handle swipe gestures
+  // Handle swipe gestures with improved detection
   const handleTouchStart = (e) => {
     touchStartY.current = e.touches[0].clientY;
+    handleInteraction();
   };
   
   const handleTouchEnd = (e) => {
@@ -81,9 +85,20 @@ const ExplorePage = () => {
     const diff = touchStartY.current - touchEndY;
     
     // Detect swipe direction (with threshold)
-    if (diff > 50) { // Swipe up
+    if (diff > 70) { // Swipe up, increased threshold for intentional swipes
       handleNext();
-    } else if (diff < -50) { // Swipe down
+    } else if (diff < -70) { // Swipe down
+      handlePrev();
+    }
+  };
+
+  const handleWheel = (e) => {
+    // Debounce wheel events to prevent too rapid switching
+    if (Date.now() - lastInteraction < 500) return;
+    
+    if (e.deltaY > 0) { // Scroll down = next sample
+      handleNext();
+    } else if (e.deltaY < 0) { // Scroll up = previous sample
       handlePrev();
     }
   };
@@ -91,12 +106,14 @@ const ExplorePage = () => {
   const handleRefresh = () => {
     refreshSamples();
     setCurrentIndex(0);
+    handleInteraction();
     toast({
       title: "Refreshed",
       description: "Found new samples for you",
       status: "success",
       duration: 2000,
       isClosable: true,
+      position: "bottom",
     });
   };
   
@@ -105,10 +122,29 @@ const ExplorePage = () => {
     return (
       <>
         <NavBar />
-        <Flex height="calc(100vh - 80px)" justifyContent="center" alignItems="center">
-          <VStack>
-            <Spinner size="xl" color="red.500" thickness="4px" />
-            <Text mt={4} color="white">Discovering samples...</Text>
+        <Flex 
+          height="calc(100vh - 80px)" 
+          justifyContent="center" 
+          alignItems="center"
+          bg="black"
+        >
+          <VStack spacing={5}>
+            <Spinner 
+              size="xl" 
+              color="red.500" 
+              thickness="4px" 
+              speed="0.65s"
+              emptyColor="whiteAlpha.200"
+            />
+            <Text 
+              mt={4} 
+              color="white" 
+              fontSize="lg" 
+              fontWeight="medium"
+              textAlign="center"
+            >
+              Discovering trending samples...
+            </Text>
           </VStack>
         </Flex>
       </>
@@ -120,10 +156,30 @@ const ExplorePage = () => {
     return (
       <>
         <NavBar />
-        <Flex height="calc(100vh - 80px)" justifyContent="center" alignItems="center">
-          <VStack>
-            <Text color="red.400">Error loading samples</Text>
-            <Button onClick={refreshSamples} colorScheme="red" mt={4}>
+        <Flex 
+          height="calc(100vh - 80px)" 
+          justifyContent="center" 
+          alignItems="center"
+          bg="black"
+        >
+          <VStack spacing={4}>
+            <Box 
+              p={5} 
+              bg="rgba(229, 62, 62, 0.1)" 
+              borderRadius="lg" 
+              borderWidth="1px" 
+              borderColor="red.500"
+            >
+              <Text color="red.400" fontWeight="medium">Error loading samples</Text>
+            </Box>
+            <Button 
+              onClick={refreshSamples} 
+              colorScheme="red" 
+              mt={4}
+              size="lg"
+              _hover={{ transform: 'scale(1.05)' }}
+              transition="all 0.2s"
+            >
               Try Again
             </Button>
           </VStack>
@@ -135,139 +191,316 @@ const ExplorePage = () => {
   return (
     <>
       <NavBar />
-      <Box 
-        bg="black" 
-        height="calc(100vh - 80px)" 
-        width="100%" 
-        position="relative"
-        overflow="hidden"
-        onTouchStart={handleTouchStart}
-        onTouchEnd={handleTouchEnd}
-      >
-        {samples.length > 0 ? (
-          <AnimatePresence mode="wait">
-            <MotionBox
-              key={currentIndex}
-              initial={{ 
-                opacity: 0,
-                y: direction === 'up' ? 300 : -300 
-              }}
+      <Container maxW="100%" p={0} position="relative" height="calc(100vh - 80px)" overflow="hidden">
+        <Box 
+          bg="black" 
+          height="100%" 
+          width="100%" 
+          position="relative"
+          overflow="hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseMove={handleInteraction}
+          onWheel={handleWheel}
+        >
+          {/* Page title with fade effect */}
+          <MotionFlex 
+            position="absolute" 
+            top={0} 
+            left={0} 
+            right={0} 
+            p={4} 
+            zIndex={50}
+            bgGradient="linear(to-b, rgba(0,0,0,0.8), rgba(0,0,0,0))"
+            animate={{ 
+              opacity: showControls ? 1 : 0,
+              y: showControls ? 0 : -10
+            }}
+            transition={{ duration: 0.3 }}
+            alignItems="center"
+            justifyContent="space-between"
+          >
+            <Heading size="lg" color="white" fontWeight="bold">
+              Discover
+            </Heading>
+            
+            <IconButton
+              icon={<FaRandom />}
+              aria-label="Shuffle samples"
+              isRound
+              onClick={handleRefresh}
+              colorScheme="red"
+              size="sm"
+              variant="ghost"
+              _hover={{ bg: 'whiteAlpha.200' }}
+            />
+          </MotionFlex>
+        
+          {/* Main content - Sample Card */}
+          <Box position="relative" height="100%" width="100%" zIndex={10}>
+            {samples.length > 0 ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <MotionBox
+                  key={currentIndex}
+                  initial={{ 
+                    opacity: 0,
+                    y: direction === 'up' ? 300 : -300 
+                  }}
+                  animate={{ 
+                    opacity: 1,
+                    y: 0 
+                  }}
+                  exit={{ 
+                    opacity: 0,
+                    y: direction === 'up' ? -300 : 300,
+                    transition: { duration: 0.25 }
+                  }}
+                  transition={{ 
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                    duration: 0.4 
+                  }}
+                  height="100%"
+                  width="100%"
+                >
+                  <SampleCard 
+                    sample={samples[currentIndex]} 
+                    onNext={handleNext}
+                  />
+                </MotionBox>
+              </AnimatePresence>
+            ) : (
+              <Flex height="100%" justifyContent="center" alignItems="center">
+                <Text color="white">No samples available</Text>
+              </Flex>
+            )}
+          </Box>
+          
+          {/* UI Overlay Container - All controls positioned relative to this */}
+          <Box position="absolute" top={0} left={0} right={0} bottom={0} pointerEvents="none" zIndex={20}>
+            {/* Side action buttons (TikTok style) */}
+            <MotionFlex 
+              position="absolute" 
+              right={{ base: 3, md: 6 }} 
+              bottom="20%" 
+              direction="column"
+              gap={4}
+              zIndex={30}
               animate={{ 
-                opacity: 1,
-                y: 0 
-              }}
-              exit={{ 
-                opacity: 0,
-                y: direction === 'up' ? -300 : 300 
+                opacity: showControls ? 1 : 0,
+                x: showControls ? 0 : 20
               }}
               transition={{ duration: 0.3 }}
-              height="100%"
-              width="100%"
+              alignItems="center"
+              pointerEvents="auto"
             >
-              <SampleCard 
-                sample={samples[currentIndex]} 
-                onNext={handleNext}
-              />
-            </MotionBox>
-          </AnimatePresence>
-        ) : (
-          <Flex height="100%" justifyContent="center" alignItems="center">
-            <Text color="white">No samples available</Text>
-          </Flex>
-        )}
-        
-        {/* First-time user navigation hint */}
-        {showHint && samples.length > 1 && (
-          <Flex
-            position="absolute"
-            bottom="15%"
-            left="50%"
-            transform="translateX(-50%)"
-            flexDirection="column"
-            alignItems="center"
-            color="white"
-            bg="blackAlpha.800" // Darker background for better contrast
-            p={4}
-            borderRadius="md"
-            onClick={() => setShowHint(false)}
-            cursor="pointer"
-            css={bounceAnimation}
-            maxW="250px" // Limit width
-            textAlign="center"
-            boxShadow="0px 4px 10px rgba(0,0,0,0.4)" // Add shadow for separation
-            zIndex={20} // Ensure it's above other elements
-          >
-          </Flex>
-        )}
-
-        {/* Make navigation controls more prominent */}
-        <Flex 
-          position="absolute" 
-          right={{ base: 4, md: 8 }} 
-          top="50%" 
-          transform="translateY(-50%)"
-          direction="column"
-          gap={6} // Increase gap
-          zIndex={10}
-        >
-          <IconButton
-            icon={<FaChevronUp />}
-            aria-label="Previous sample"
-            isRound
-            onClick={handlePrev}
-            isDisabled={currentIndex === 0}
-            colorScheme="whiteAlpha"
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
-          
-          <IconButton
-            icon={<FaRandom />}
-            aria-label="Refresh samples"
-            isRound
-            onClick={handleRefresh}
-            colorScheme="red"
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
-          
-          {/* Make the next button more prominent when there are more samples */}
-          <IconButton
-            icon={<FaChevronDown />}
-            aria-label="Next sample"
-            isRound
-            onClick={handleNext}
-            isDisabled={currentIndex === samples.length - 1 && !hasMore}
-            colorScheme={currentIndex < samples.length - 1 ? "red" : "whiteAlpha"}
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
-        </Flex>
-      
-        
-        {/* Progress indicator - make it more prominent */}
-        {samples.length > 0 && (
-          <Box
-            position="absolute"
-            top={6}
-            left={6}
-            bg="blackAlpha.700"
-            px={3}
-            py={1}
-            borderRadius="full"
-            boxShadow="0px 2px 6px rgba(0,0,0,0.3)" // Add shadow
-            zIndex={15}
-          >
-            <Text color="white" fontWeight="bold">
-              {currentIndex + 1} / {samples.length}
-              {hasMore && "+"}
-            </Text>
+              <VStack spacing={1}>
+                <Circle
+                  size={controlsSize === "lg" ? "48px" : "40px"}
+                  bg="blackAlpha.700"
+                  color="white"
+                  cursor="pointer"
+                  transition="all 0.2s"
+                  _hover={{ transform: 'scale(1.1)', bg: "blackAlpha.800" }}
+                  onClick={handleRefresh}
+                  boxShadow="0px 2px 5px rgba(0,0,0,0.3)"
+                >
+                  <FaRandom size={controlsSize === "lg" ? 18 : 14} />
+                </Circle>
+                <Text color="white" fontSize="xs" textShadow="0px 1px 2px rgba(0,0,0,0.5)">
+                  Shuffle
+                </Text>
+              </VStack>
+              
+              <VStack spacing={1}>
+                <Circle
+                  size={controlsSize === "lg" ? "48px" : "40px"}
+                  bg="blackAlpha.700"
+                  color="white"
+                  cursor="pointer"
+                  transition="all 0.2s"
+                  _hover={{ transform: 'scale(1.1)', bg: "blackAlpha.800" }}
+                  as="a"
+                  href={samples[currentIndex]?.audioUrl}
+                  download
+                  target="_blank"
+                  boxShadow="0px 2px 5px rgba(0,0,0,0.3)"
+                >
+                  <FaMusic size={controlsSize === "lg" ? 18 : 14} />
+                </Circle>
+                <Text color="white" fontSize="xs" textShadow="0px 1px 2px rgba(0,0,0,0.5)">
+                  Get
+                </Text>
+              </VStack>
+              
+              <VStack spacing={1}>
+                <Circle
+                  size={controlsSize === "lg" ? "48px" : "40px"}
+                  bg="blackAlpha.700"
+                  color="white"
+                  cursor="pointer"
+                  transition="all 0.2s"
+                  _hover={{ transform: 'scale(1.1)', bg: "blackAlpha.800" }}
+                  boxShadow="0px 2px 5px rgba(0,0,0,0.3)"
+                >
+                  <FaShare size={controlsSize === "lg" ? 18 : 14} />
+                </Circle>
+                <Text color="white" fontSize="xs" textShadow="0px 1px 2px rgba(0,0,0,0.5)">
+                  Share
+                </Text>
+              </VStack>
+            </MotionFlex>
+            
+            {/* Progress dots (TikTok style) - Only on desktop */}
+            <MotionFlex
+              position="absolute"
+              right={{ base: 'unset', md: 3 }}
+              left={{ base: 2, md: 'unset' }}
+              top="50%"
+              height="auto"
+              transform="translateY(-50%)"
+              direction="column"
+              gap={1}
+              zIndex={25}
+              animate={{ opacity: showControls ? 0.8 : 0 }}
+              transition={{ duration: 0.3 }}
+              display={{ base: "none", md: "flex" }}
+              pointerEvents="none"
+            >
+              {samples.slice(0, Math.min(samples.length, 10)).map((_, idx) => (
+                <Box
+                  key={idx}
+                  width="4px"
+                  height={idx === currentIndex ? "24px" : "4px"}
+                  borderRadius="full"
+                  bg={idx === currentIndex ? "red.500" : "whiteAlpha.400"}
+                  transition="all 0.2s"
+                />
+              ))}
+              {samples.length > 10 && (
+                <Box
+                  width="4px"
+                  height="4px"
+                  borderRadius="full"
+                  bg="whiteAlpha.400"
+                />
+              )}
+            </MotionFlex>
+            
+            {/* Navigation controls - Centered on mobile, right side on desktop */}
+            <MotionFlex 
+              position="absolute" 
+              right={{ base: 4, md: 16 }} 
+              top="50%" 
+              transform="translateY(-50%)"
+              direction="column"
+              gap={4}
+              zIndex={40}
+              animate={{ 
+                opacity: showControls ? 1 : 0
+              }}
+              transition={{ duration: 0.3 }}
+              alignItems="center"
+              pointerEvents="auto"
+            >
+              <Tooltip label="Previous sample" placement="left" hasArrow>
+                <IconButton
+                  icon={<FaChevronUp />}
+                  aria-label="Previous sample"
+                  isRound
+                  onClick={handlePrev}
+                  isDisabled={currentIndex === 0}
+                  variant="solid"
+                  colorScheme="whiteAlpha"
+                  size={controlsSize}
+                  boxShadow="0px 0px 15px rgba(0,0,0,0.5)"
+                  _hover={{ transform: 'scale(1.1)', bg: "whiteAlpha.800" }}
+                  _active={{ transform: 'scale(0.95)' }}
+                  opacity={currentIndex === 0 ? 0.5 : 1}
+                />
+              </Tooltip>
+              
+              <Tooltip label="Next sample" placement="left" hasArrow>
+                <IconButton
+                  icon={<FaChevronDown />}
+                  aria-label="Next sample"
+                  isRound
+                  onClick={handleNext}
+                  isDisabled={currentIndex === samples.length - 1 && !hasMore}
+                  colorScheme={currentIndex < samples.length - 1 ? "red" : "whiteAlpha"}
+                  size={controlsSize}
+                  boxShadow="0px 0px 15px rgba(0,0,0,0.5)"
+                  _hover={{ transform: 'scale(1.1)' }}
+                  _active={{ transform: 'scale(0.95)' }}
+                  opacity={currentIndex === samples.length - 1 && !hasMore ? 0.5 : 1}
+                />
+              </Tooltip>
+            </MotionFlex>
+            
+            {/* Current position indicator - Bottom left */}
+            <MotionFlex 
+              position="absolute"
+              left={4}
+              bottom={4}
+              zIndex={25}
+              animate={{ 
+                opacity: showControls ? 1 : 0,
+                y: showControls ? 0 : 10
+              }}
+              transition={{ duration: 0.3 }}
+              pointerEvents="none"
+            >
+              <Box 
+                px={3} 
+                py={1} 
+                borderRadius="full" 
+                bg="blackAlpha.700"
+                boxShadow="0px 2px 6px rgba(0,0,0,0.3)"
+              >
+                <Text color="white" fontWeight="bold" fontSize="sm">
+                  {currentIndex + 1} / {samples.length}
+                  {hasMore && "+"}
+                </Text>
+              </Box>
+            </MotionFlex>
+            
+            {/* Swipe instruction indicator - Bottom center, only shows initially */}
+            <MotionFlex
+              position="absolute"
+              bottom={8}
+              left="50%"
+              transform="translateX(-50%)"
+              zIndex={25}
+              initial={{ opacity: 1, y: 0 }}
+              animate={{ 
+                opacity: showControls ? 0.8 : 0,
+                y: showControls ? 0 : 10
+              }}
+              transition={{ duration: 0.3 }}
+              alignItems="center"
+              justifyContent="center"
+              pointerEvents="none"
+            >
+              <Box
+                bg="blackAlpha.700"
+                px={4}
+                py={2}
+                borderRadius="full"
+                boxShadow="0px 2px 6px rgba(0,0,0,0.3)"
+              >
+                <HStack spacing={2}>
+                  <FaChevronUp color="white" size={12} />
+                  <Text color="white" fontSize="sm" textAlign="center">
+                    Swipe to navigate
+                  </Text>
+                  <FaChevronDown color="white" size={12} />
+                </HStack>
+              </Box>
+            </MotionFlex>
           </Box>
-        )}
-      </Box>
+        </Box>
+      </Container>
       <Footer />
     </>
   );
