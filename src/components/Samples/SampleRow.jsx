@@ -8,22 +8,39 @@ import {
   Badge,
   IconButton,
   HStack,
+  useDisclosure,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Button,
 } from '@chakra-ui/react';
-import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye } from 'react-icons/fa';
+import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
 import useAudioPlayback from '../../hooks/useAudioPlayback';
 import useDownloadTrack from '../../hooks/useDownloadTrack';
-import useTrackSampleView from '../../hooks/useTrackSampleView'; // Add this import
+import useTrackSampleView from '../../hooks/useTrackSampleView';
+import useDeleteSample from '../../hooks/useDeleteSample';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../firebase/firebase';
 import ArtistInfo from './SampleRow/ArtistInfo';
 import SampleCover from './SampleRow/SampleCover';
 import TagsList from './SampleRow/TagsList';
 
-const SampleRow = ({ track }) => {
+const SampleRow = ({ track, onDelete }) => {
   // Use our custom hooks for audio playback and download
   const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
   const { downloadTrack, downloadLoading } = useDownloadTrack();
   const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
+  const { deleteSample, isDeleting } = useDeleteSample();
+  const [user] = useAuthState(auth);
+  
+  // For delete confirmation dialog
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const cancelRef = React.useRef();
   
   // Track when this sample is viewed
   useTrackSampleView(track.id);
@@ -31,6 +48,26 @@ const SampleRow = ({ track }) => {
   // Get popularity metrics for display
   const viewCount = track.stats?.views || 0;
   const downloadCount = track.stats?.downloads || 0;
+  
+  // Check if current user is the sample owner
+  const isOwner = user && track.userId === user.uid;
+  
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    const success = await deleteSample(
+      track.id,
+      track.audioUrl,
+      track.imageUrl,
+      user?.uid,
+      track.userId
+    );
+    
+    if (success && onDelete) {
+      onDelete(track.id);
+    }
+    
+    onClose();
+  };
   
   return (
     <Box
@@ -144,6 +181,23 @@ const SampleRow = ({ track }) => {
                 _hover={{ bg: "whiteAlpha.300" }}
               />
             </Tooltip>
+            
+            {/* Delete button - Only visible to sample owner */}
+            {isOwner && (
+              <Tooltip label="Delete">
+                <IconButton
+                  icon={<FaTrash />}
+                  aria-label="Delete sample"
+                  size="sm"
+                  isRound
+                  colorScheme="red"
+                  variant="ghost"
+                  onClick={onOpen}
+                  isLoading={isDeleting}
+                  _hover={{ bg: "red.700" }}
+                />
+              </Tooltip>
+            )}
           </HStack>
         </Flex>
       </Flex>
@@ -199,6 +253,39 @@ const SampleRow = ({ track }) => {
           preload="auto"
         />
       </Box>
+      
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onClose}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent bg="gray.800" color="white">
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Sample
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete "{track.name}"? This action cannot be undone.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onClose} variant="outline">
+                Cancel
+              </Button>
+              <Button 
+                colorScheme="red" 
+                onClick={handleDeleteConfirm} 
+                ml={3}
+                isLoading={isDeleting}
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
   );
 };

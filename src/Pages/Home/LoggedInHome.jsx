@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -14,6 +14,7 @@ import {
   ButtonGroup,
   Icon,
   useBreakpointValue,
+  useToast,
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
 import { FaCompass, FaFire, FaChevronRight, FaChartLine } from 'react-icons/fa';
@@ -33,6 +34,8 @@ const MotionFlex = motion(Flex);
 
 const LoggedInHome = () => {
   const [timeRange, setTimeRange] = useState('weekly');
+  const [localPopularSamples, setLocalPopularSamples] = useState([]);
+  const toast = useToast();
 
   const {
     playlists,
@@ -45,6 +48,28 @@ const LoggedInHome = () => {
     loading: samplesLoading,
     error: samplesError,
   } = usePopularSamples(5, timeRange);
+  
+  // Update local samples when popularSamples changes
+  useEffect(() => {
+    if (popularSamples) {
+      setLocalPopularSamples(popularSamples);
+    }
+  }, [popularSamples]);
+  
+  // Handle sample deletion
+  const handleDeleteSample = (sampleId) => {
+    setLocalPopularSamples(prevSamples => 
+      prevSamples.filter(sample => sample.id !== sampleId)
+    );
+    
+    toast({
+      title: "Sample deleted",
+      description: "Your sample has been removed",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
   
   // Fetch users with the highest heat scores
   const {
@@ -294,14 +319,17 @@ const LoggedInHome = () => {
                 </Box>
               ) : (
                 <VStack spacing={4} align="stretch">
-                  {popularSamples.map((sample, index) => (
+                  {localPopularSamples.map((sample, index) => (
                     <MotionBox
                       key={sample.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 * index, duration: 0.4 }}
                     >
-                      <SampleRow track={sample} />
+                      <SampleRow 
+                        track={sample} 
+                        onDelete={handleDeleteSample}
+                      />
                     </MotionBox>
                   ))}
 

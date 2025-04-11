@@ -36,6 +36,26 @@ const PlaylistDetailPage = () => {
   const [user] = useAuthState(auth);
   const toast = useToast();
 
+  // Handle track deletion from playlist
+  const handleDeleteTrack = (trackId) => {
+    // Only update the UI - actual deletion is handled by the useDeleteSample hook
+    if (playlist && playlist.tracks) {
+      const updatedTracks = playlist.tracks.filter(track => track.id !== trackId);
+      setPlaylist(prev => ({
+        ...prev,
+        tracks: updatedTracks
+      }));
+      
+      toast({
+        title: "Sample deleted",
+        description: "The sample has been removed",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   // Fetch playlist data
   useEffect(() => {
     const fetchPlaylist = async () => {
@@ -254,7 +274,11 @@ const PlaylistDetailPage = () => {
               >
                 {/* Replace PlaylistTrackItem with SampleRow */}
                 {playlist.tracks.map((track) => (
-                  <SampleRow key={track.id || `track-${Math.random()}`} track={track} />
+                  <SampleRow 
+                    key={track.id || `track-${Math.random()}`} 
+                    track={track}
+                    onDelete={handleDeleteTrack} 
+                  />
                 ))}
               </Box>
             </>
