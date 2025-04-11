@@ -2,56 +2,49 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { 
   Box, 
   Flex, 
-  Spinner, 
   Text, 
+  Spinner, 
   Button, 
   VStack,
   IconButton,
-  useToast
+  useToast,
+  Heading,
+  HStack,
+  Tooltip
 } from '@chakra-ui/react';
-import { FaRandom, FaChevronUp, FaChevronDown, FaArrowDown } from 'react-icons/fa';
+import { FaRandom, FaChevronUp, FaChevronDown, FaFilter } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import SampleCard from '../../components/Explore/SampleCard';
 import useExploreData from '../../hooks/useExploreData';
 import Footer from '../../components/footer/Footer';
-import { keyframes, css } from '@emotion/react';
 
 // Motion components
 const MotionBox = motion(Box);
 
-// Define animations
-const bounceKeyframes = keyframes`
-  0%, 20%, 50%, 80%, 100% { transform: translateY(0) translateX(-50%); }
-  40% { transform: translateY(-10px) translateX(-50%); }
-  60% { transform: translateY(-5px) translateX(-50%); }
-`;
-
-const pulseKeyframes = keyframes`
-  0% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.2); }
-  100% { opacity: 0.5; transform: scale(1); }
-`;
-
-const bounceAnimation = css`animation: ${bounceKeyframes} 2s infinite`;
-const pulseAnimation = css`animation: ${pulseKeyframes} 2s infinite`;
-
 const ExplorePage = () => {
-  const { samples, loading, error, fetchMoreSamples, hasMore, refreshSamples } = useExploreData();
+  const { samples, loading, error, fetchMoreSamples, hasMore, refreshSamples } = useExploreData(15);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(null);
   const touchStartY = useRef(0);
   const toast = useToast();
-  const [showHint, setShowHint] = useState(true);
+  const [showControls, setShowControls] = useState(true);
   
+  // Auto-hide controls after inactivity
   useEffect(() => {
-    if (showHint) {
-      const timer = setTimeout(() => {
-        setShowHint(false);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [showHint]);
+    const timer = setTimeout(() => {
+      if (showControls) {
+        setShowControls(false);
+      }
+    }, 5000);
+    
+    return () => clearTimeout(timer);
+  }, [currentIndex, showControls]);
+  
+  // Show controls on mouse movement
+  const handleMouseMove = () => {
+    setShowControls(true);
+  };
   
   const handleNext = useCallback(() => {
     if (currentIndex >= samples.length - 2 && hasMore) {
@@ -61,6 +54,7 @@ const ExplorePage = () => {
     if (currentIndex < samples.length - 1) {
       setDirection('up');
       setCurrentIndex(prev => prev + 1);
+      setShowControls(true);
     }
   }, [currentIndex, samples, fetchMoreSamples, hasMore]);
   
@@ -68,6 +62,7 @@ const ExplorePage = () => {
     if (currentIndex > 0) {
       setDirection('down');
       setCurrentIndex(prev => prev - 1);
+      setShowControls(true);
     }
   }, [currentIndex]);
   
@@ -91,6 +86,7 @@ const ExplorePage = () => {
   const handleRefresh = () => {
     refreshSamples();
     setCurrentIndex(0);
+    setShowControls(true);
     toast({
       title: "Refreshed",
       description: "Found new samples for you",
@@ -143,7 +139,23 @@ const ExplorePage = () => {
         overflow="hidden"
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
+        onMouseMove={handleMouseMove}
       >
+        {/* Page title */}
+        <Flex 
+          position="absolute" 
+          top={0} 
+          left={0} 
+          right={0} 
+          p={4} 
+          zIndex={100}
+          bgGradient="linear(to-b, rgba(0,0,0,0.7), rgba(0,0,0,0))"
+          opacity={showControls ? 1 : 0}
+          transition="opacity 0.3s ease"
+        >
+          <Heading size="lg" color="white">Explore</Heading>
+        </Flex>
+      
         {samples.length > 0 ? (
           <AnimatePresence mode="wait">
             <MotionBox
@@ -176,97 +188,114 @@ const ExplorePage = () => {
           </Flex>
         )}
         
-        {/* First-time user navigation hint */}
-        {showHint && samples.length > 1 && (
-          <Flex
-            position="absolute"
-            bottom="15%"
-            left="50%"
-            transform="translateX(-50%)"
-            flexDirection="column"
-            alignItems="center"
-            color="white"
-            bg="blackAlpha.800" // Darker background for better contrast
-            p={4}
-            borderRadius="md"
-            onClick={() => setShowHint(false)}
-            cursor="pointer"
-            css={bounceAnimation}
-            maxW="250px" // Limit width
-            textAlign="center"
-            boxShadow="0px 4px 10px rgba(0,0,0,0.4)" // Add shadow for separation
-            zIndex={20} // Ensure it's above other elements
-          >
-          </Flex>
-        )}
-
-        {/* Make navigation controls more prominent */}
+        {/* Navigation controls with improved appearance */}
         <Flex 
           position="absolute" 
-          right={{ base: 4, md: 8 }} 
+          right={{ base: 4, md: 6 }} 
           top="50%" 
           transform="translateY(-50%)"
           direction="column"
-          gap={6} // Increase gap
+          gap={4}
           zIndex={10}
+          opacity={showControls ? 1 : 0}
+          transition="opacity 0.3s ease"
+          alignItems="center"
         >
-          <IconButton
-            icon={<FaChevronUp />}
-            aria-label="Previous sample"
-            isRound
-            onClick={handlePrev}
-            isDisabled={currentIndex === 0}
-            colorScheme="whiteAlpha"
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
+          <Tooltip label="Previous sample" placement="left" hasArrow>
+            <IconButton
+              icon={<FaChevronUp />}
+              aria-label="Previous sample"
+              isRound
+              onClick={handlePrev}
+              isDisabled={currentIndex === 0}
+              variant="solid"
+              colorScheme="whiteAlpha"
+              size="lg"
+              boxShadow="0px 0px 15px rgba(0,0,0,0.5)"
+              _hover={{ transform: 'scale(1.1)', bg: "whiteAlpha.800" }}
+              _active={{ transform: 'scale(0.95)' }}
+            />
+          </Tooltip>
           
-          <IconButton
-            icon={<FaRandom />}
-            aria-label="Refresh samples"
-            isRound
-            onClick={handleRefresh}
-            colorScheme="red"
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
+          <Tooltip label="Shuffle samples" placement="left" hasArrow>
+            <IconButton
+              icon={<FaRandom />}
+              aria-label="Refresh samples"
+              isRound
+              onClick={handleRefresh}
+              colorScheme="red"
+              size="lg"
+              boxShadow="0px 0px 15px rgba(229, 62, 62, 0.4)"
+              _hover={{ transform: 'scale(1.1)' }}
+              _active={{ transform: 'scale(0.95)' }}
+            />
+          </Tooltip>
           
-          {/* Make the next button more prominent when there are more samples */}
-          <IconButton
-            icon={<FaChevronDown />}
-            aria-label="Next sample"
-            isRound
-            onClick={handleNext}
-            isDisabled={currentIndex === samples.length - 1 && !hasMore}
-            colorScheme={currentIndex < samples.length - 1 ? "red" : "whiteAlpha"}
-            size="lg"
-            boxShadow="0px 0px 15px rgba(0,0,0,0.3)"
-            _hover={{ transform: 'scale(1.1)' }}
-          />
+          <Tooltip label="Next sample" placement="left" hasArrow>
+            <IconButton
+              icon={<FaChevronDown />}
+              aria-label="Next sample"
+              isRound
+              onClick={handleNext}
+              isDisabled={currentIndex === samples.length - 1 && !hasMore}
+              colorScheme={currentIndex < samples.length - 1 ? "red" : "whiteAlpha"}
+              size="lg"
+              boxShadow="0px 0px 15px rgba(0,0,0,0.5)"
+              _hover={{ transform: 'scale(1.1)' }}
+              _active={{ transform: 'scale(0.95)' }}
+            />
+          </Tooltip>
         </Flex>
-      
         
-        {/* Progress indicator - make it more prominent */}
+        {/* Progress indicator with improved appearance */}
         {samples.length > 0 && (
-          <Box
+          <HStack
             position="absolute"
             top={6}
             left={6}
-            bg="blackAlpha.700"
-            px={3}
-            py={1}
-            borderRadius="full"
-            boxShadow="0px 2px 6px rgba(0,0,0,0.3)" // Add shadow
             zIndex={15}
+            spacing={1}
+            opacity={showControls ? 1 : 0}
+            transition="opacity 0.3s ease"
           >
-            <Text color="white" fontWeight="bold">
-              {currentIndex + 1} / {samples.length}
-              {hasMore && "+"}
-            </Text>
-          </Box>
+            <Box 
+              px={3} 
+              py={1} 
+              borderRadius="full" 
+              bg="blackAlpha.700"
+              boxShadow="0px 2px 6px rgba(0,0,0,0.3)"
+            >
+              <Text color="white" fontWeight="bold">
+                {currentIndex + 1} / {samples.length}
+                {hasMore && "+"}
+              </Text>
+            </Box>
+          </HStack>
         )}
+        
+        {/* Swipe instruction indicator */}
+        <Box
+          position="absolute"
+          bottom={8}
+          left="50%"
+          transform="translateX(-50%)"
+          zIndex={5}
+          opacity={showControls ? 0.8 : 0}
+          transition="opacity 0.3s ease"
+        >
+          <Text 
+            color="white" 
+            fontSize="sm" 
+            textAlign="center"
+            bg="blackAlpha.700"
+            px={4}
+            py={2}
+            borderRadius="full"
+            boxShadow="0px 2px 6px rgba(0,0,0,0.3)"
+          >
+            Swipe up for next • Swipe down for previous
+          </Text>
+        </Box>
       </Box>
       <Footer />
     </>

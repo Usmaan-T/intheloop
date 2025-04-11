@@ -277,6 +277,7 @@ const NavBar = () => {
               as={Button} 
               rightIcon={<ChevronDownIcon />} 
               variant="ghost" 
+              color="white"
               _hover={{ bg: "whiteAlpha.200" }}
               _active={{ bg: "whiteAlpha.300" }}
             >
@@ -309,6 +310,7 @@ const NavBar = () => {
                   borderRadius="full" 
                   display="flex" 
                   alignItems="center"
+                  color="white"
                   _hover={{ bg: "whiteAlpha.200" }}
                 >
                   <Avatar size="sm" src={user.photoURL || undefined} mr={2} />
@@ -333,6 +335,7 @@ const NavBar = () => {
                       justifyContent="flex-start" 
                       py={3} 
                       px={4}
+                      color="red.400"
                       borderRadius={0}
                       isLoading={loading}
                       _hover={{ bg: "red.700" }}

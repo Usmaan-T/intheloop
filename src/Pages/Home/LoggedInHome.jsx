@@ -22,8 +22,10 @@ import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
 import Playlist from '../../components/Playlist/Playlist';
 import SampleRow from '../../components/Samples/SampleRow';
+import HotUserCard from '../../components/User/HotUserCard';
 import { usePopularSamples } from '../../hooks/usePopularSamples';
 import { usePublicPlaylists } from '../../hooks/usePublicPlaylists';
+import usePopularUsers from '../../hooks/usePopularUsers';
 
 // Motion components
 const MotionBox = motion(Box);
@@ -43,6 +45,13 @@ const LoggedInHome = () => {
     loading: samplesLoading,
     error: samplesError,
   } = usePopularSamples(5, timeRange);
+  
+  // Fetch users with the highest heat scores
+  const {
+    users: hotUsers,
+    loading: usersLoading,
+    error: usersError,
+  } = usePopularUsers(5);
 
   const headingSize = useBreakpointValue({ base: 'xl', md: '2xl' });
 
@@ -115,6 +124,7 @@ const LoggedInHome = () => {
         </MotionBox>
 
         <Container maxW="container.xl" py={{ base: 8, md: 10 }}>
+          {/* Hot Users Section */}
           <MotionBox
             mb={10}
             initial={{ opacity: 0, y: 20 }}
@@ -129,29 +139,15 @@ const LoggedInHome = () => {
               gap={{ base: 4, sm: 0 }}
             >
               <HStack spacing={3}>
-                <Icon as={FaCompass} color="purple.400" boxSize={6} />
+                <Icon as={FaFire} color="orange.400" boxSize={6} />
                 <Heading as="h2" size="lg" color="white" fontWeight="semibold">
-                  Explore User Playlists
+                  Hot Users
                 </Heading>
               </HStack>
 
-              <Button
-                as={Link}
-                to="/playlists"
-                variant="outline"
-                colorScheme="purple"
-                rightIcon={<FaChevronRight />}
-                size={{ base: 'md', md: 'md' }}
-                fontWeight="medium"
-                borderColor="purple.400"
-                _hover={{
-                  bg: 'whiteAlpha.100',
-                  transform: 'translateY(-2px)',
-                  shadow: 'md',
-                }}
-              >
-                View All
-              </Button>
+              <Text color="gray.400" fontSize="sm">
+                Artists with the highest weekly heat
+              </Text>
             </Flex>
 
             <Box
@@ -164,40 +160,40 @@ const LoggedInHome = () => {
               overflow="hidden"
               position="relative"
             >
-              {playlistsLoading ? (
-                <Flex justify="center" py={10}>
-                  <Spinner size="xl" color="purple.500" thickness="4px" />
+              {usersLoading ? (
+                <Flex justify="center" py={8}>
+                  <Spinner size="lg" color="orange.500" thickness="4px" />
                 </Flex>
-              ) : playlistsError ? (
+              ) : usersError ? (
                 <Box bg="red.500" color="white" p={4} borderRadius="md" textAlign="center">
-                  Error loading playlists
+                  Error loading hot users
                 </Box>
+              ) : hotUsers.length === 0 ? (
+                <Text color="gray.400" textAlign="center" py={8}>
+                  No hot users to display yet
+                </Text>
               ) : (
-                <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 6 }} spacing={6}>
-                  {playlists.map((playlist, index) => (
-                    <MotionBox
-                      key={playlist.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.1 * index, duration: 0.5 }}
-                    >
-                      <Playlist
-                        name={playlist.name}
-                        bio={playlist.description}
-                        image={playlist.coverImage}
-                        color={playlist.colorCode}
-                        privacy={playlist.privacy}
-                        id={playlist.id}
-                      />
-                    </MotionBox>
-                  ))}
-                </SimpleGrid>
+                <>
+                  <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 5 }} spacing={4}>
+                    {hotUsers.map((user, index) => (
+                      <MotionBox
+                        key={user.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 * index, duration: 0.4 }}
+                      >
+                        <HotUserCard user={user} rank={index + 1} />
+                      </MotionBox>
+                    ))}
+                  </SimpleGrid>
+                </>
               )}
             </Box>
           </MotionBox>
 
           <Divider my={10} borderColor="whiteAlpha.300" />
 
+          {/* Popular Samples Section */}
           <MotionBox
             mb={10}
             initial={{ opacity: 0, y: 20 }}
@@ -221,7 +217,7 @@ const LoggedInHome = () => {
               <HStack spacing={4}>
                 <ButtonGroup size="sm" isAttached variant="outline">
                   <Button
-                    colorScheme={timeRange === 'daily' ? 'red' : 'gray'}
+                    colorScheme={timeRange === 'daily' ? 'red' : 'whiteAlpha'}
                     onClick={() => setTimeRange('daily')}
                     borderColor="whiteAlpha.300"
                     fontWeight="medium"
@@ -230,7 +226,7 @@ const LoggedInHome = () => {
                     Today
                   </Button>
                   <Button
-                    colorScheme={timeRange === 'weekly' ? 'red' : 'gray'}
+                    colorScheme={timeRange === 'weekly' ? 'red' : 'whiteAlpha'}
                     onClick={() => setTimeRange('weekly')}
                     borderColor="whiteAlpha.300"
                     fontWeight="medium"
@@ -239,7 +235,7 @@ const LoggedInHome = () => {
                     This Week
                   </Button>
                   <Button
-                    colorScheme={timeRange === 'monthly' ? 'red' : 'gray'}
+                    colorScheme={timeRange === 'monthly' ? 'red' : 'whiteAlpha'}
                     onClick={() => setTimeRange('monthly')}
                     borderColor="whiteAlpha.300"
                     fontWeight="medium"
@@ -248,7 +244,7 @@ const LoggedInHome = () => {
                     This Month
                   </Button>
                   <Button
-                    colorScheme={timeRange === 'allTime' ? 'red' : 'gray'}
+                    colorScheme={timeRange === 'allTime' ? 'red' : 'whiteAlpha'}
                     onClick={() => setTimeRange('allTime')}
                     borderColor="whiteAlpha.300"
                     fontWeight="medium"
@@ -328,6 +324,90 @@ const LoggedInHome = () => {
                     Discover More Samples
                   </Button>
                 </VStack>
+              )}
+            </Box>
+          </MotionBox>
+
+          <Divider my={10} borderColor="whiteAlpha.300" />
+
+          {/* User Playlists Section */}
+          <MotionBox
+            mb={10}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.6 }}
+          >
+            <Flex
+              alignItems="center"
+              justifyContent="space-between"
+              mb={6}
+              flexDirection={{ base: 'column', sm: 'row' }}
+              gap={{ base: 4, sm: 0 }}
+            >
+              <HStack spacing={3}>
+                <Icon as={FaCompass} color="purple.400" boxSize={6} />
+                <Heading as="h2" size="lg" color="white" fontWeight="semibold">
+                  Explore User Playlists
+                </Heading>
+              </HStack>
+
+              <Button
+                as={Link}
+                to="/playlists"
+                variant="outline"
+                colorScheme="purple"
+                rightIcon={<FaChevronRight />}
+                size={{ base: 'md', md: 'md' }}
+                fontWeight="medium"
+                borderColor="purple.400"
+                _hover={{
+                  bg: 'whiteAlpha.100',
+                  transform: 'translateY(-2px)',
+                  shadow: 'md',
+                }}
+              >
+                View All
+              </Button>
+            </Flex>
+
+            <Box
+              bg="rgba(20, 20, 30, 0.8)"
+              borderRadius="xl"
+              p={{ base: 4, md: 6 }}
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              boxShadow="0 4px 20px rgba(0,0,0,0.1)"
+              overflow="hidden"
+              position="relative"
+            >
+              {playlistsLoading ? (
+                <Flex justify="center" py={10}>
+                  <Spinner size="xl" color="purple.500" thickness="4px" />
+                </Flex>
+              ) : playlistsError ? (
+                <Box bg="red.500" color="white" p={4} borderRadius="md" textAlign="center">
+                  Error loading playlists
+                </Box>
+              ) : (
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 6 }} spacing={6}>
+                  {playlists.map((playlist, index) => (
+                    <MotionBox
+                      key={playlist.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index, duration: 0.5 }}
+                    >
+                      <Playlist
+                        name={playlist.name}
+                        bio={playlist.description}
+                        image={playlist.coverImage}
+                        color={playlist.colorCode}
+                        privacy={playlist.privacy}
+                        id={playlist.id}
+                      />
+                    </MotionBox>
+                  ))}
+                </SimpleGrid>
               )}
             </Box>
           </MotionBox>

@@ -78,7 +78,7 @@ const ProfileHeader = ({
               </Text>
               <Text color="gray.400">
                 <Text as="span" fontWeight="bold" color="white">
-                  {popularityScore?.weekly || 0}
+                  {popularityScore?.allTime || 0}
                 </Text> Popularity
               </Text>
             </HStack>
