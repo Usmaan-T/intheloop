@@ -14,7 +14,8 @@ const useUploadFiles = () => {
   const [inputs, setInputs] = useState({
     name: '',
     key: '',
-    bpm: ''
+    bpm: '',
+    tags: ''
   });
 
   const uploadAudio = async () => {
@@ -50,7 +51,8 @@ const useUploadFiles = () => {
         comments: [],
         bpm: inputs.bpm,
         key: inputs.key,
-        name: inputs.name
+        name: inputs.name,
+        tags: inputs.tags || []
       };
 
       // Save the post object in Firestore under the "posts" collection
