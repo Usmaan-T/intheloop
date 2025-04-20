@@ -359,7 +359,7 @@ const UploadPage = () => {
               
               {/* Add Tags Section */}
               <FormControl id="tags">
-                <FormLabel color="gray.300" mb={2}>Tags (Max 4)</FormLabel>
+                <FormLabel color="gray.300" mb={2}>Tags (Max 8)</FormLabel>
                 
                 {/* Display selected tags */}
                 <Wrap spacing={2} mb={3}>
@@ -452,6 +452,7 @@ const UploadPage = () => {
                         bg="whiteAlpha.200"
                         _hover={{ bg: "whiteAlpha.300" }}
                         size="sm"
+                        color="white"
                       >
                         Instrument
                       </MenuButton>

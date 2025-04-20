@@ -353,6 +353,7 @@ const NavBar = () => {
                 to="/auth" 
                 variant="ghost" 
                 _hover={{ bg: "whiteAlpha.200" }}
+                color="white"
               >
                 Sign in
               </Button>
@@ -361,6 +362,7 @@ const NavBar = () => {
                 to="/auth?mode=register" 
                 bg="red.600"
                 _hover={{ bg: "red.700" }}
+                color="white"
               >
                 Register
               </Button>
@@ -452,6 +454,7 @@ const NavBar = () => {
                   variant="outline" 
                   flex={1}
                   onClick={onClose}
+                  color="white"
                 >
                   Sign in
                 </Button>
@@ -462,6 +465,7 @@ const NavBar = () => {
                   _hover={{ bg: "red.700" }} 
                   flex={1}
                   onClick={onClose}
+                  color="white"
                 >
                   Register
                 </Button>
