@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Container,
@@ -51,12 +51,17 @@ import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
 import SampleRow from '../../components/Samples/SampleRow';
 import useSamplesData, { SAMPLE_TAGS } from '../../hooks/useSamplesData';
+import RecommendedSamples from '../../components/Samples/RecommendedSamples';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../firebase/firebase';
 
 // Motion components for animations
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
 
 const SamplesPage = () => {
+  const [user] = useAuthState(auth);
+  
   // URL query parameters
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -92,6 +97,9 @@ const SamplesPage = () => {
 
   // Infinite scroll functionality
   const observerTarget = useRef(null);
+  
+  const [expandedCategories, setExpandedCategories] = useState({ main: ['genre'], drawer: [] });
+  const [tagSearch, setTagSearch] = useState('');
   
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -140,43 +148,141 @@ const SamplesPage = () => {
   // Handle tag selection
   const handleTagSelect = (tag) => {
     if (selectedTags.includes(tag)) {
-      setSelectedTags(selectedTags.filter(t => t !== tag));
+      const newTags = selectedTags.filter(t => t !== tag);
+      setSelectedTags(newTags);
+      
+      // Force a refresh after tag is removed
+      console.log("Tag removed, refreshing samples:", tag);
+      // We need to wait for state update before refreshing
+      setTimeout(() => refreshSamples(), 0);
     } else {
-      setSelectedTags([...selectedTags, tag]);
+      const newTags = [...selectedTags, tag];
+      setSelectedTags(newTags);
+      
+      // Force a refresh after tag is added
+      console.log("Tag added, refreshing samples:", tag);
+      // We need to wait for state update before refreshing
+      setTimeout(() => refreshSamples(), 0);
     }
   };
 
-  // Handle search input
+  // Handle search input with debounce
+  const searchTimeoutRef = useRef(null);
   const handleSearchInput = (e) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    
+    // Set a new timeout for refreshing (300ms debounce)
+    searchTimeoutRef.current = setTimeout(() => {
+      console.log("Search term changed, refreshing samples:", value);
+      refreshSamples();
+    }, 300);
   };
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Clear all filters
   const clearFilters = () => {
     setSearchTerm('');
     setSelectedTags([]);
     setSortBy('newest');
-    navigate('/samples'); // Clear URL params completely
+    
+    // Force immediate refresh
+    console.log("Clearing all filters and refreshing samples");
+    setTimeout(() => refreshSamples(), 0);
+    
+    // Also clear URL params
+    navigate('/samples');
   };
   
   // Get tag color based on category
   const getTagColorScheme = (tag) => {
-    if (SAMPLE_TAGS.genre.includes(tag)) return "red";
-    if (SAMPLE_TAGS.mood.includes(tag)) return "blue";
-    if (SAMPLE_TAGS.instrument.includes(tag)) return "green";
-    if (SAMPLE_TAGS.tempo.includes(tag)) return "purple";
-    return "gray";
+    const category = Object.entries(SAMPLE_TAGS).find(([_, tags]) => 
+      tags.includes(tag)
+    )?.[0];
+    
+    switch (category) {
+      case 'genre': return 'red';
+      case 'mood': return 'blue';
+      case 'instrument': return 'green';
+      case 'tempo': return 'purple';
+      case 'key': return 'orange';
+      default: return 'gray';
+    }
   };
   
   // Get category icon
   const getCategoryIcon = (category) => {
-    switch(category) {
-      case 'genre': return FaMusic;
-      case 'mood': return MdMood;
-      case 'instrument': return FaGuitar;
-      case 'tempo': return MdSpeed;
-      default: return FaTags;
+    switch (category) {
+      case 'genre':
+        return FaMusic;
+      case 'instrument':
+        return FaGuitar;
+      case 'mood':
+        return MdMood;
+      case 'tempo':
+        return MdSpeed;
+      case 'key':
+        return MdMusicNote;
+      default:
+        return FaTags;
     }
+  };
+
+  // Toggle category expansion
+  const toggleCategory = (categoryId, section = 'main') => {
+    setExpandedCategories(prev => {
+      const currentExpanded = [...prev[section]];
+      const index = currentExpanded.indexOf(categoryId);
+      
+      if (index >= 0) {
+        currentExpanded.splice(index, 1);
+      } else {
+        currentExpanded.push(categoryId);
+      }
+      
+      return {
+        ...prev,
+        [section]: currentExpanded
+      };
+    });
+  };
+
+  // Toggle all categories
+  const toggleAllCategories = (expand = true, section = 'main') => {
+    if (expand) {
+      // Expand all
+      setExpandedCategories(prev => ({
+        ...prev,
+        [section]: Object.keys(SAMPLE_TAGS)
+      }));
+    } else {
+      // Collapse all
+      setExpandedCategories(prev => ({
+        ...prev,
+        [section]: []
+      }));
+    }
+  };
+
+  // Filter tags by search term
+  const getFilteredTags = (tags, searchTerm) => {
+    if (!searchTerm.trim()) return tags;
+    return tags.filter(tag => 
+      tag.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   };
 
   return (
@@ -268,6 +374,18 @@ const SamplesPage = () => {
         </MotionBox>
 
         <Container maxW="container.xl" py={{ base: 8, md: 10 }}>
+          {/* Personalized Recommendations Section - only shown to logged in users */}
+          {user && (
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+              mb={8}
+            >
+              <RecommendedSamples maxItems={6} />
+            </MotionBox>
+          )}
+          
           {/* Filters Section */}
           <MotionBox
             mb={8}
@@ -292,7 +410,12 @@ const SamplesPage = () => {
               <HStack spacing={4}>
                 <Select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    // Refresh immediately when sort changes
+                    console.log("Sort changed, refreshing samples:", e.target.value);
+                    setTimeout(() => refreshSamples(), 0);
+                  }}
                   width={{ base: "full", md: "180px" }}
                   bg="rgba(20, 20, 30, 0.8)"
                   color="white"
@@ -330,40 +453,146 @@ const SamplesPage = () => {
               </HStack>
             </Flex>
             
-            {/* Active Filters / Tags Display */}
-            {selectedTags.length > 0 && (
-              <Flex wrap="wrap" gap={2} align="center" mb={6}>
-                <HStack>
-                  <Text color="gray.400" fontSize="sm" fontWeight="medium">
-                    Show samples with ALL tags:
-                  </Text>
-                  <Tooltip 
-                    label="Only samples containing ALL selected tags will be shown" 
-                    placement="top"
-                    bg="gray.700"
+            {/* Key and Active Filters Row */}
+            <Flex 
+              mb={6} 
+              gap={4} 
+              flexDirection={{ base: "column", md: "row" }}
+              alignItems={{ base: "stretch", md: "center" }}
+            >
+              {/* Musical Key Filter */}
+              <Box 
+                width={{ base: "full", md: "300px" }}
+                bg="rgba(20, 20, 30, 0.8)"
+                borderRadius="md"
+                borderWidth="1px"
+                borderColor="orange.700"
+                overflow="hidden"
+              >
+                <Flex 
+                  bg="orange.900" 
+                  px={4} 
+                  py={2} 
+                  alignItems="center"
+                >
+                  <Icon as={MdMusicNote} color="orange.200" mr={2} />
+                  <Text fontWeight="medium" color="white">Musical Key</Text>
+                </Flex>
+                <Menu closeOnSelect={true}>
+                  <MenuButton
+                    as={Button}
+                    rightIcon={<FaChevronRight transform="rotate(90deg)" />}
+                    bg="transparent"
+                    color="white"
+                    _hover={{ bg: "blackAlpha.300" }}
+                    _active={{ bg: "blackAlpha.500" }}
+                    width="full"
+                    borderRadius="0"
+                    justifyContent="space-between"
+                    py={3}
+                    px={4}
                   >
-                    <Icon as={FaInfoCircle} color="gray.400" boxSize={3} />
-                  </Tooltip>
-                </HStack>
-                {selectedTags.map(tag => (
-                  <Tag
-                    key={tag}
-                    size="md"
-                    borderRadius="full"
-                    variant="solid"
-                    colorScheme={getTagColorScheme(tag)}
-                  >
-                    <TagLabel>{tag}</TagLabel>
-                    <TagCloseButton onClick={() => handleTagSelect(tag)} />
-                  </Tag>
-                ))}
-                <Button size="xs" onClick={clearFilters} variant="link" color="gray.400">
-                  Clear All
-                </Button>
-              </Flex>
-            )}
+                    {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "Select Key"}
+                  </MenuButton>
+                  <MenuList bg="gray.800" maxH="300px" overflowY="auto">
+                    <Text px={3} py={2} color="gray.400" fontSize="sm" fontWeight="bold">Major Keys</Text>
+                    {SAMPLE_TAGS.key
+                      .filter(key => !key.includes('m'))
+                      .map(key => (
+                        <MenuItem 
+                          key={key} 
+                          onClick={() => {
+                            // Remove any previously selected key
+                            const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                            // Add the new key
+                            setSelectedTags([...newTags, key]);
+                            setTimeout(() => refreshSamples(), 0);
+                          }}
+                          bg="gray.800"
+                          _hover={{ bg: "orange.700" }}
+                          color="white"
+                        >
+                          {key}
+                        </MenuItem>
+                      ))
+                    }
+                    <Text px={3} py={2} color="gray.400" fontSize="sm" fontWeight="bold" mt={2}>Minor Keys</Text>
+                    {SAMPLE_TAGS.key
+                      .filter(key => key.includes('m'))
+                      .map(key => (
+                        <MenuItem 
+                          key={key} 
+                          onClick={() => {
+                            // Remove any previously selected key
+                            const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                            // Add the new key
+                            setSelectedTags([...newTags, key]);
+                            setTimeout(() => refreshSamples(), 0);
+                          }}
+                          bg="gray.800"
+                          _hover={{ bg: "orange.700" }}
+                          color="white"
+                        >
+                          {key}
+                        </MenuItem>
+                      ))
+                    }
+                    <Divider my={2} borderColor="whiteAlpha.300" />
+                    <MenuItem 
+                      bg="gray.800"
+                      _hover={{ bg: "gray.700" }}
+                      color="gray.300"
+                      onClick={() => {
+                        const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                        setSelectedTags(newTags);
+                        setTimeout(() => refreshSamples(), 0);
+                      }}
+                    >
+                      Clear Key Filter
+                    </MenuItem>
+                  </MenuList>
+                </Menu>
+              </Box>
+              
+              {/* Active Tags Display */}
+              {selectedTags.length > 0 && (
+                <Flex 
+                  wrap="wrap" 
+                  gap={2} 
+                  align="center" 
+                  flex="1"
+                  borderWidth="1px"
+                  borderColor="whiteAlpha.200"
+                  borderRadius="md"
+                  p={2}
+                >
+                  <HStack>
+                    <Text color="gray.400" fontSize="sm" fontWeight="medium">
+                      Filters:
+                    </Text>
+                  </HStack>
+                  {selectedTags.map(tag => (
+                    <Tag
+                      key={tag}
+                      size="md"
+                      borderRadius="full"
+                      variant="solid"
+                      colorScheme={getTagColorScheme(tag)}
+                    >
+                      <TagLabel>{tag}</TagLabel>
+                      <TagCloseButton onClick={() => handleTagSelect(tag)} />
+                    </Tag>
+                  ))}
+                  {selectedTags.length > 0 && (
+                    <Button size="xs" onClick={clearFilters} variant="link" color="gray.400">
+                      Clear All
+                    </Button>
+                  )}
+                </Flex>
+              )}
+            </Flex>
             
-            {/* Category Tag Selection */}
+            {/* Category Tag Selection - Remove Key from here */}
             <Box 
               bg="rgba(20, 20, 30, 0.6)" 
               borderRadius="lg" 
@@ -375,58 +604,137 @@ const SamplesPage = () => {
               {/* Multi-tag selection info */}
               <Flex mb={4} alignItems="center" justifyContent="space-between">
                 <Heading size="sm" color="white">Select Tags to Filter</Heading>
-                <HStack spacing={2}>
-                  <Icon as={FaInfoCircle} color="blue.300" />
-                  <Text fontSize="sm" color="blue.300">
-                    Select multiple tags to see samples with ALL selected tags
-                  </Text>
+                <HStack spacing={4}>
+                  <Button 
+                    size="xs" 
+                    variant="outline" 
+                    colorScheme="blue" 
+                    leftIcon={<FaChevronRight transform="rotate(90deg)" />}
+                    onClick={() => toggleAllCategories(true, 'main')}
+                  >
+                    Expand All
+                  </Button>
+                  <Button 
+                    size="xs" 
+                    variant="outline" 
+                    colorScheme="blue" 
+                    leftIcon={<FaChevronRight transform="rotate(270deg)" />}
+                    onClick={() => toggleAllCategories(false, 'main')}
+                  >
+                    Collapse All
+                  </Button>
                 </HStack>
               </Flex>
               
-              <SimpleGrid columns={{ base: 1, sm: 2, md: 4 }} spacing={4}>
-                {Object.entries(SAMPLE_TAGS).map(([category, tags]) => (
-                  <Box key={category}>
-                    <Flex align="center" mb={2}>
-                      <Icon as={getCategoryIcon(category)} color={
-                        category === 'genre' ? 'red.400' :
-                        category === 'mood' ? 'blue.400' :
-                        category === 'instrument' ? 'green.400' :
-                        'purple.400'
-                      } boxSize={4} mr={2} />
-                      <Text color="white" fontWeight="medium" fontSize="sm" textTransform="capitalize">
-                        {category}
-                      </Text>
+              {/* Accordion-style tag selection */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
+                {Object.entries(SAMPLE_TAGS)
+                  .filter(([category]) => category !== 'key') // Skip key category here
+                  .map(([category, tags]) => (
+                  <Box 
+                    key={category} 
+                    bg="whiteAlpha.100" 
+                    borderRadius="md" 
+                    overflow="hidden"
+                    borderWidth="1px"
+                    borderColor="whiteAlpha.200"
+                  >
+                    <Flex 
+                      align="center" 
+                      justify="space-between"
+                      p={3}
+                      cursor="pointer"
+                      onClick={() => toggleCategory(category, 'main')}
+                      bg={
+                        category === 'genre' ? 'red.900' :
+                        category === 'mood' ? 'blue.900' :
+                        category === 'instrument' ? 'green.900' :
+                        category === 'tempo' ? 'purple.900' :
+                        'gray.900'
+                      }
+                      _hover={{ bg: 
+                        category === 'genre' ? 'red.800' :
+                        category === 'mood' ? 'blue.800' :
+                        category === 'instrument' ? 'green.800' :
+                        category === 'tempo' ? 'purple.800' :
+                        'gray.800'
+                      }}
+                    >
+                      <HStack>
+                        <Icon as={getCategoryIcon(category)} color={
+                          category === 'genre' ? 'red.300' :
+                          category === 'mood' ? 'blue.300' :
+                          category === 'instrument' ? 'green.300' :
+                          category === 'tempo' ? 'purple.300' :
+                          'gray.300'
+                        } boxSize={5} mr={2} />
+                        <Text color="white" fontWeight="medium" fontSize="md" textTransform="capitalize">
+                          {category}
+                        </Text>
+                      </HStack>
+                      <HStack>
+                        <Badge 
+                          variant="subtle" 
+                          colorScheme={
+                            category === 'genre' ? 'red' :
+                            category === 'mood' ? 'blue' :
+                            category === 'instrument' ? 'green' :
+                            category === 'tempo' ? 'purple' :
+                            'gray'
+                          }
+                          fontSize="xs"
+                        >
+                          {selectedTags.filter(tag => SAMPLE_TAGS[category].includes(tag)).length} selected
+                        </Badge>
+                        <Icon 
+                          as={FaChevronRight} 
+                          color="gray.400" 
+                          transform={expandedCategories.main.includes(category) ? "rotate(90deg)" : "rotate(0deg)"}
+                          transition="transform 0.2s"
+                        />
+                      </HStack>
                     </Flex>
-                    <Wrap spacing={2}>
-                      {tags.map(tag => (
-                        <WrapItem key={tag}>
-                          <Tag
-                            size="md"
-                            borderRadius="full"
-                            variant={selectedTags.includes(tag) ? "solid" : "outline"}
-                            colorScheme={
-                              category === 'genre' ? 'red' :
-                              category === 'mood' ? 'blue' :
-                              category === 'instrument' ? 'green' :
-                              'purple'
-                            }
-                            cursor="pointer"
-                            onClick={() => handleTagSelect(tag)}
-                            whiteSpace="nowrap"
-                            px={3}
-                            py={1.5}
-                            opacity={selectedTags.includes(tag) ? 1 : 0.7}
-                            _hover={{ 
-                              opacity: 1,
-                              transform: selectedTags.includes(tag) ? 'none' : 'translateY(-2px)'
-                            }}
-                            transition="all 0.2s"
-                          >
-                            <TagLabel>{tag}</TagLabel>
-                          </Tag>
-                        </WrapItem>
-                      ))}
-                    </Wrap>
+                    <Box 
+                      style={{
+                        maxHeight: expandedCategories.main.includes(category) ? '200px' : '0px',
+                        opacity: expandedCategories.main.includes(category) ? 1 : 0,
+                        padding: expandedCategories.main.includes(category) ? '12px' : '0 12px',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Wrap spacing={2}>
+                        {tags.map(tag => (
+                          <WrapItem key={tag}>
+                            <Tag
+                              size="md"
+                              borderRadius="full"
+                              variant={selectedTags.includes(tag) ? "solid" : "outline"}
+                              colorScheme={
+                                category === 'genre' ? 'red' :
+                                category === 'mood' ? 'blue' :
+                                category === 'instrument' ? 'green' :
+                                category === 'tempo' ? 'purple' :
+                                'gray'
+                              }
+                              cursor="pointer"
+                              onClick={() => handleTagSelect(tag)}
+                              whiteSpace="nowrap"
+                              px={3}
+                              py={1.5}
+                              opacity={selectedTags.includes(tag) ? 1 : 0.7}
+                              _hover={{ 
+                                opacity: 1,
+                                transform: selectedTags.includes(tag) ? 'none' : 'translateY(-2px)'
+                              }}
+                              transition="all 0.2s"
+                            >
+                              <TagLabel>{tag}</TagLabel>
+                            </Tag>
+                          </WrapItem>
+                        ))}
+                      </Wrap>
+                    </Box>
                   </Box>
                 ))}
               </SimpleGrid>
@@ -524,6 +832,7 @@ const SamplesPage = () => {
                 </Box>
               ) : (
                 <VStack spacing={4} align="stretch">
+                  {console.log(`Rendering ${samples.length} samples in SamplesPage`)}
                   {samples.map((sample, index) => (
                     <MotionBox
                       key={sample.id}
@@ -611,7 +920,12 @@ const SamplesPage = () => {
                 </Flex>
                 <Select
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
+                  onChange={(e) => {
+                    setSortBy(e.target.value);
+                    // Refresh immediately when sort changes
+                    console.log("Sort changed, refreshing samples:", e.target.value);
+                    setTimeout(() => refreshSamples(), 0);
+                  }}
                   bg="gray.700"
                   border="1px solid"
                   borderColor="whiteAlpha.300"
@@ -625,71 +939,291 @@ const SamplesPage = () => {
               </Box>
 
               <Divider borderColor="whiteAlpha.300" />
-
-              {/* Tags Filter using Tabs */}
+              
+              {/* Musical Key Filter */}
               <Box>
                 <Flex align="center" mb={4}>
-                  <Icon as={FaTags} color="#E53E3E" />
-                  <Text ml={2} fontWeight="bold" fontSize="lg">Filter by Category</Text>
+                  <Icon as={MdMusicNote} color="orange.400" />
+                  <Text ml={2} fontWeight="bold" fontSize="lg">Musical Key</Text>
                 </Flex>
                 
-                <Tabs variant="soft-rounded" colorScheme="red" isFitted mb={4}>
-                  <TabList>
-                    {Object.keys(SAMPLE_TAGS).map(category => (
-                      <Tab 
-                        key={category}
-                        _selected={{ 
-                          color: 'white', 
-                          bg: category === 'genre' ? 'red.500' : 
-                               category === 'mood' ? 'blue.500' : 
-                               category === 'instrument' ? 'green.500' : 
-                               'purple.500'
-                        }}
-                      >
-                        <Icon 
-                          as={getCategoryIcon(category)} 
-                          mr={2} 
-                        />
-                        <Text textTransform="capitalize">{category}</Text>
-                      </Tab>
-                    ))}
-                  </TabList>
-                  
-                  <TabPanels mt={4}>
-                    {Object.entries(SAMPLE_TAGS).map(([category, tags]) => (
-                      <TabPanel key={category} px={1}>
-                        <Wrap spacing={3}>
-                          {tags.map(tag => (
-                            <WrapItem key={tag}>
+                <Box 
+                  bg="whiteAlpha.100" 
+                  borderRadius="md" 
+                  overflow="hidden"
+                  borderWidth="1px"
+                  borderColor="orange.700"
+                >
+                  <Menu placement="bottom" isLazy>
+                    <MenuButton
+                      as={Button}
+                      rightIcon={<FaChevronRight transform="rotate(90deg)" />}
+                      bg="rgba(0,0,0,0.3)"
+                      color="white"
+                      _hover={{ bg: "blackAlpha.500" }}
+                      _active={{ bg: "blackAlpha.600" }}
+                      size="lg"
+                      width="full"
+                      px={6}
+                      py={6}
+                      fontWeight="normal"
+                      fontSize="lg"
+                      height="auto"
+                    >
+                      {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "Select Key"}
+                    </MenuButton>
+                    <MenuList bg="gray.800" maxH="300px" overflowY="auto">
+                      <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold">Major Keys</Text>
+                      {SAMPLE_TAGS.key
+                        .filter(key => !key.includes('m'))
+                        .map(key => (
+                          <MenuItem 
+                            key={key} 
+                            onClick={() => {
+                              // Remove any previously selected key
+                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                              // Add the new key
+                              setSelectedTags([...newTags, key]);
+                              setTimeout(() => refreshSamples(), 0);
+                            }}
+                            bg="gray.800"
+                            _hover={{ bg: "orange.700" }}
+                            color="white"
+                          >
+                            {key}
+                          </MenuItem>
+                        ))
+                      }
+                      <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold" mt={2}>Minor Keys</Text>
+                      {SAMPLE_TAGS.key
+                        .filter(key => key.includes('m'))
+                        .map(key => (
+                          <MenuItem 
+                            key={key} 
+                            onClick={() => {
+                              // Remove any previously selected key
+                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                              // Add the new key
+                              setSelectedTags([...newTags, key]);
+                              setTimeout(() => refreshSamples(), 0);
+                            }}
+                            bg="gray.800"
+                            _hover={{ bg: "orange.700" }}
+                            color="white"
+                          >
+                            {key}
+                          </MenuItem>
+                        ))
+                      }
+                      <Divider my={2} borderColor="whiteAlpha.300" />
+                      {selectedTags.some(tag => SAMPLE_TAGS.key.includes(tag)) && (
+                        <MenuItem 
+                          bg="gray.800"
+                          _hover={{ bg: "gray.700" }}
+                          color="gray.300"
+                          onClick={() => {
+                            const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                            setSelectedTags(newTags);
+                            setTimeout(() => refreshSamples(), 0);
+                          }}
+                        >
+                          Clear Key Filter
+                        </MenuItem>
+                      )}
+                    </MenuList>
+                  </Menu>
+                </Box>
+              </Box>
+
+              <Divider borderColor="whiteAlpha.300" />
+
+              {/* Tags Filter using Accordion */}
+              <Box>
+                <Flex align="center" mb={4} justify="space-between">
+                  <HStack>
+                    <Icon as={FaTags} color="#E53E3E" />
+                    <Text fontWeight="bold" fontSize="lg">Filter by Category</Text>
+                  </HStack>
+                  <HStack spacing={2}>
+                    <Button 
+                      size="xs" 
+                      variant="outline" 
+                      colorScheme="blue" 
+                      onClick={() => toggleAllCategories(true, 'drawer')}
+                    >
+                      Expand All
+                    </Button>
+                    <Button 
+                      size="xs" 
+                      variant="outline" 
+                      colorScheme="blue" 
+                      onClick={() => toggleAllCategories(false, 'drawer')}
+                    >
+                      Collapse All
+                    </Button>
+                  </HStack>
+                </Flex>
+                
+                {/* Search for tags */}
+                <InputGroup mb={4} size="md">
+                  <InputLeftElement pointerEvents="none">
+                    <FaSearch color="gray.300" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search tags..."
+                    value={tagSearch}
+                    onChange={(e) => setTagSearch(e.target.value)}
+                    bg="gray.700"
+                    color="white"
+                    _placeholder={{ color: 'gray.400' }}
+                    borderColor="whiteAlpha.300"
+                  />
+                </InputGroup>
+                
+                {tagSearch && (
+                  <Box mb={4} p={3} bg="gray.700" borderRadius="md">
+                    <Text mb={2} fontSize="sm" color="blue.300">Search results for "{tagSearch}":</Text>
+                    <Wrap spacing={2}>
+                      {Object.entries(SAMPLE_TAGS)
+                        .filter(([category]) => category !== 'key')
+                        .flatMap(([category, tags]) => 
+                          getFilteredTags(tags, tagSearch).map(tag => (
+                            <WrapItem key={`search-${tag}`}>
                               <Tag
-                                size="lg"
+                                size="md"
                                 borderRadius="full"
                                 variant={selectedTags.includes(tag) ? "solid" : "outline"}
                                 colorScheme={
                                   category === 'genre' ? 'red' :
                                   category === 'mood' ? 'blue' :
                                   category === 'instrument' ? 'green' :
-                                  'purple'
+                                  category === 'tempo' ? 'purple' :
+                                  'gray'
                                 }
                                 cursor="pointer"
                                 onClick={() => handleTagSelect(tag)}
-                                py={2}
-                                px={4}
-                                _hover={{ 
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
-                                }}
-                                transition="all 0.2s"
+                                py={1.5}
+                                px={3}
+                                _hover={{ transform: 'translateY(-2px)' }}
                               >
                                 <TagLabel>{tag}</TagLabel>
                               </Tag>
                             </WrapItem>
-                          ))}
-                        </Wrap>
-                      </TabPanel>
-                    ))}
-                  </TabPanels>
-                </Tabs>
+                          ))
+                      )}
+                    </Wrap>
+                  </Box>
+                )}
+                
+                {Object.entries(SAMPLE_TAGS)
+                  .filter(([category]) => category !== 'key')
+                  .map(([category, tags]) => (
+                  <Box 
+                    key={category} 
+                    mb={3}
+                    bg="gray.700" 
+                    borderRadius="md" 
+                    overflow="hidden"
+                    borderWidth="1px"
+                    borderColor="whiteAlpha.200"
+                    display={tagSearch && !tags.some(tag => tag.toLowerCase().includes(tagSearch.toLowerCase())) ? 'none' : 'block'}
+                  >
+                    <Flex 
+                      align="center" 
+                      justify="space-between"
+                      p={3}
+                      cursor="pointer"
+                      onClick={() => toggleCategory(category, 'drawer')}
+                      bg={
+                        category === 'genre' ? 'red.800' :
+                        category === 'mood' ? 'blue.800' :
+                        category === 'instrument' ? 'green.800' :
+                        category === 'tempo' ? 'purple.800' :
+                        'gray.800'
+                      }
+                      _hover={{ bg: 
+                        category === 'genre' ? 'red.700' :
+                        category === 'mood' ? 'blue.700' :
+                        category === 'instrument' ? 'green.700' :
+                        category === 'tempo' ? 'purple.700' :
+                        'gray.700'
+                      }}
+                    >
+                      <HStack>
+                        <Icon as={getCategoryIcon(category)} color={
+                          category === 'genre' ? 'red.300' :
+                          category === 'mood' ? 'blue.300' :
+                          category === 'instrument' ? 'green.300' :
+                          category === 'tempo' ? 'purple.300' :
+                          'gray.300'
+                        } boxSize={5} mr={2} />
+                        <Text color="white" fontWeight="medium" fontSize="md" textTransform="capitalize">
+                          {category}
+                        </Text>
+                      </HStack>
+                      <HStack>
+                        <Badge 
+                          variant="subtle" 
+                          colorScheme={
+                            category === 'genre' ? 'red' :
+                            category === 'mood' ? 'blue' :
+                            category === 'instrument' ? 'green' :
+                            category === 'tempo' ? 'purple' :
+                            'gray'
+                          }
+                          fontSize="xs"
+                        >
+                          {selectedTags.filter(tag => SAMPLE_TAGS[category].includes(tag)).length} selected
+                        </Badge>
+                        <Icon 
+                          as={FaChevronRight} 
+                          color="gray.400" 
+                          transform={expandedCategories.drawer.includes(category) ? "rotate(90deg)" : "rotate(0deg)"}
+                          transition="transform 0.2s"
+                        />
+                      </HStack>
+                    </Flex>
+                    <Box 
+                      style={{
+                        maxHeight: expandedCategories.drawer.includes(category) ? '300px' : '0px',
+                        opacity: expandedCategories.drawer.includes(category) ? 1 : 0,
+                        padding: expandedCategories.drawer.includes(category) ? '16px' : '0 16px',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      <Wrap spacing={3} py={2}>
+                        {getFilteredTags(tags, tagSearch).map(tag => (
+                          <WrapItem key={tag}>
+                            <Tag
+                              size="lg"
+                              borderRadius="full"
+                              variant={selectedTags.includes(tag) ? "solid" : "outline"}
+                              colorScheme={
+                                category === 'genre' ? 'red' :
+                                category === 'mood' ? 'blue' :
+                                category === 'instrument' ? 'green' :
+                                category === 'tempo' ? 'purple' :
+                                'gray'
+                              }
+                              cursor="pointer"
+                              onClick={() => handleTagSelect(tag)}
+                              py={2}
+                              px={4}
+                              _hover={{ 
+                                transform: 'translateY(-2px)',
+                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)' 
+                              }}
+                              transition="all 0.2s"
+                            >
+                              <TagLabel>{tag}</TagLabel>
+                            </Tag>
+                          </WrapItem>
+                        ))}
+                      </Wrap>
+                    </Box>
+                  </Box>
+                ))}
               </Box>
 
               {/* Selected Tags */}

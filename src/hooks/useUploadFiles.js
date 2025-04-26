@@ -52,7 +52,7 @@ const useUploadFiles = () => {
         bpm: inputs.bpm,
         key: inputs.key,
         name: inputs.name,
-        tags: inputs.tags || []
+        tags: inputs.key ? [...(inputs.tags || []), inputs.key] : inputs.tags || []
       };
 
       // Save the post object in Firestore under the "posts" collection

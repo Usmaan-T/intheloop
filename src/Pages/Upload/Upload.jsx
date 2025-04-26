@@ -45,6 +45,12 @@ const SAMPLE_TAGS = {
   tempo: ['Slow', 'Medium', 'Fast', 'Variable']
 };
 
+// Musical keys
+const MUSICAL_KEYS = {
+  major: ['C', 'C#/Db', 'D', 'D#/Eb', 'E', 'F', 'F#/Gb', 'G', 'G#/Ab', 'A', 'A#/Bb', 'B'],
+  minor: ['Am', 'A#m/Bbm', 'Bm', 'Cm', 'C#m/Dbm', 'Dm', 'D#m/Ebm', 'Em', 'Fm', 'F#m/Gbm', 'Gm', 'G#m/Abm']
+};
+
 const UploadPage = () => {
   const toast = useToast();
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -316,23 +322,49 @@ const UploadPage = () => {
               <HStack spacing={4}>
                 <FormControl id="trackKey">
                   <FormLabel color="gray.300">Key</FormLabel>
-                  <InputGroup>
-                    <InputLeftElement pointerEvents="none">
-                      <Icon as={MdMusicNote} color="gray.500" />
-                    </InputLeftElement>
-                    <Input
-                      type="text"
-                      value={inputs.key}
-                      placeholder="E.g., C#m"
-                      onChange={(e) => setInputs({ ...inputs, key: e.target.value })}
+                  <Menu>
+                    <MenuButton
+                      as={Button}
+                      rightIcon={<Icon as={MdMusicNote} />}
                       bg="whiteAlpha.100"
                       color="white"
                       borderColor="whiteAlpha.300"
                       _hover={{ borderColor: "purple.400" }}
                       _focus={{ borderColor: "purple.500", boxShadow: "0 0 0 1px rgba(159, 122, 234, 0.7)" }}
                       borderRadius="md"
-                    />
-                  </InputGroup>
+                      width="100%"
+                      textAlign="left"
+                      fontWeight="normal"
+                    >
+                      {inputs.key || "Select Key"}
+                    </MenuButton>
+                    <MenuList bg="gray.800" maxH="300px" overflowY="auto">
+                      <Text px={3} py={2} color="gray.400" fontSize="sm" fontWeight="bold">Major Keys</Text>
+                      {MUSICAL_KEYS.major.map(key => (
+                        <MenuItem 
+                          key={key} 
+                          onClick={() => setInputs({ ...inputs, key })}
+                          bg="gray.800"
+                          _hover={{ bg: "purple.700" }}
+                          color="white"
+                        >
+                          {key}
+                        </MenuItem>
+                      ))}
+                      <Text px={3} py={2} color="gray.400" fontSize="sm" fontWeight="bold" mt={2}>Minor Keys</Text>
+                      {MUSICAL_KEYS.minor.map(key => (
+                        <MenuItem 
+                          key={key} 
+                          onClick={() => setInputs({ ...inputs, key })}
+                          bg="gray.800"
+                          _hover={{ bg: "purple.700" }}
+                          color="white"
+                        >
+                          {key}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
                 </FormControl>
                 
                 <FormControl id="bpm">

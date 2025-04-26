@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase/firebase';
-import trackSampleInteraction from './useTrackSampleInteraction'; // Add this import
+import { auth, firestore } from '../firebase/firebase';
+import trackSampleInteraction from './useTrackSampleInteraction';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import COLLECTIONS from '../firebase/collections';
 
 const useDownloadTrack = () => {
   const [downloadLoading, setDownloadLoading] = useState(false);
@@ -24,6 +26,18 @@ const useDownloadTrack = () => {
     setDownloadLoading(true);
     
     try {
+      // Check if this user has already downloaded this sample
+      let isFirstDownload = true;
+      if (user) {
+        // Create a unique ID for the user-track combination
+        const interactionId = `${track.id}_download_${user.uid}`;
+        const statRef = doc(firestore, COLLECTIONS.SAMPLE_STATS, interactionId);
+        const statDoc = await getDoc(statRef);
+        
+        // If user has previously downloaded this sample, don't count toward popularity
+        isFirstDownload = !statDoc.exists();
+      }
+      
       // Fetch the audio file
       const response = await fetch(track.audioUrl);
       if (!response.ok) throw new Error('Failed to download file');
@@ -48,13 +62,15 @@ const useDownloadTrack = () => {
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      // Track the download interaction for popularity
-      await trackSampleInteraction(
-        track.id,
-        'download',
-        user?.uid || null,
-        false
-      );
+      // Only track download for popularity if it's the first time this user downloads it
+      if (isFirstDownload) {
+        await trackSampleInteraction(
+          track.id,
+          'download',
+          user?.uid || null,
+          false
+        );
+      }
 
       toast({
         title: "Download complete",
