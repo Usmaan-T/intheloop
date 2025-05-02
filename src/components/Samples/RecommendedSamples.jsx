@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import {
   Box,
   Heading,
@@ -16,7 +16,7 @@ import {
   useToast
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { FaHeart, FaRegHeart, FaInfoCircle, FaRandom, FaSyncAlt } from 'react-icons/fa';
+import { FaHeart, FaInfoCircle, FaRandom, FaSyncAlt } from 'react-icons/fa';
 import useSampleRecommendations from '../../hooks/useSampleRecommendations';
 import SampleCard from '../Explore/SampleCard';
 
@@ -25,7 +25,8 @@ const MotionBox = motion(Box);
 const MotionHeading = motion(Heading);
 const MotionFlex = motion(Flex);
 
-const RecommendedSamples = ({ maxItems = 6 }) => {
+// Memoize the component to prevent unnecessary re-renders
+const RecommendedSamples = memo(({ maxItems = 6 }) => {
   const {
     recommendations,
     loading,
@@ -35,8 +36,13 @@ const RecommendedSamples = ({ maxItems = 6 }) => {
   } = useSampleRecommendations(maxItems);
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const refreshCountRef = useRef(0);
+  const previousRecommendationsRef = useRef([]);
   const toast = useToast();
+
+  // Generate stable key based on recommendation IDs
+  const recommendationsKey = recommendations && recommendations.length > 0
+    ? `recs-${recommendations.slice(0, 2).map(rec => rec.id).join('-')}`
+    : 'recs-empty';
 
   // Get top tags to explain recommendation basis
   const topTags = Object.entries(userTagPreferences)
@@ -47,10 +53,10 @@ const RecommendedSamples = ({ maxItems = 6 }) => {
   // Handle refresh with visual feedback
   const handleRefresh = () => {
     setIsRefreshing(true);
-    refreshCountRef.current += 1;
+    // Store current recommendations for comparison
+    previousRecommendationsRef.current = [...recommendations];
     refreshRecommendations();
     
-    // Show toast notification
     toast({
       title: "Refreshing recommendations",
       description: "Finding new samples based on your preferences",
@@ -191,7 +197,7 @@ const RecommendedSamples = ({ maxItems = 6 }) => {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          key={`recs-refresh-${refreshCountRef.current}`}
+          key={recommendationsKey}
         >
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={6}>
             {recommendations.map((sample, index) => (
@@ -213,6 +219,6 @@ const RecommendedSamples = ({ maxItems = 6 }) => {
       )}
     </MotionBox>
   );
-};
+});
 
 export default RecommendedSamples; 

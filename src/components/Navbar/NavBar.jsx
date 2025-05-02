@@ -30,7 +30,8 @@ import {
   Center,
   Spinner,
   CloseButton,
-  InputRightElement
+  InputRightElement,
+  Image
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon, ChevronDownIcon, SearchIcon } from '@chakra-ui/icons';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -40,6 +41,7 @@ import { motion } from 'framer-motion';
 import { useLocation, Link as RouterLink, useNavigate } from 'react-router-dom';
 import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers } from 'react-icons/fa';
 import useFindUsers from '../../hooks/useFindUsers';
+import logoImage from '../../assets/in-the-loop-high-resolution-logo (1).png';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -129,9 +131,12 @@ const NavBar = () => {
       <Flex align="center">
         {/* Logo and Site Name */}
         <HStack spacing={3} as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-          <Heading as="h1" size="lg" fontWeight="bold">
-            In the Loop
-          </Heading>
+          <Image 
+            src={logoImage} 
+            alt="The Loop Logo" 
+            height="100px"
+            objectFit="contain"
+          />
         </HStack>
 
         <Spacer />
@@ -393,6 +398,16 @@ const NavBar = () => {
           display={{ base: 'block', md: 'none' }}
           overflow="hidden"
         >
+          {/* Mobile Logo */}
+          <Flex justify="center" mb={4}>
+            <Image 
+              src={logoImage} 
+              alt="The Loop Logo" 
+              height="50px"
+              objectFit="contain"
+            />
+          </Flex>
+          
           {/* Mobile Search */}
           <InputGroup mb={4}>
             <InputLeftElement pointerEvents="none">
