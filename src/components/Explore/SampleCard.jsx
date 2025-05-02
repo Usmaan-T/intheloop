@@ -33,7 +33,7 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
 } from '@chakra-ui/react';
-import { FaHeart, FaPlay, FaPause, FaPlus, FaTrash } from 'react-icons/fa';
+import { FaHeart, FaPlay, FaPause, FaPlus, FaTrash, FaThumbsUp, FaFire } from 'react-icons/fa';
 import { MdMusicNote } from 'react-icons/md';
 import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
@@ -57,7 +57,12 @@ const generateColorFromName = (name) => {
   return colors[sum % colors.length];
 };
 
-const SampleCard = ({ sample, onNext }) => {
+const SampleCard = ({ 
+  sample, 
+  onNext, 
+  isCompact = false, 
+  showRecommendationReason = false 
+}) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef(null);
   const { isLiked, likeCount, toggleLike } = useLikeSample(sample.id);
@@ -172,15 +177,54 @@ const SampleCard = ({ sample, onNext }) => {
   // Check if current user is the owner
   const isOwner = user && sample.userId === user.uid;
 
+  // Get recommendation display info
+  const showRecommendation = showRecommendationReason && sample.recommendationReason;
+  const isTrending = sample.recommendationReason === 'trending';
+
   return (
     <Box 
-      height="100%" 
+      height={isCompact ? "auto" : "100%"} 
       width="100%"
       position="relative"
       bg="gray.900"
       borderRadius="lg"
       overflow="hidden"
+      transition="transform 0.2s, box-shadow 0.2s"
+      _hover={isCompact ? {
+        transform: "translateY(-5px)",
+        boxShadow: "lg"
+      } : {}}
+      cursor={isCompact ? "pointer" : "default"}
+      onClick={isCompact ? () => navigate(`/samples/${sample.id}`) : undefined}
     >
+      {/* Recommendation reason banner */}
+      {showRecommendation && (
+        <Flex
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          zIndex={5}
+          bg={isTrending ? "orange.600" : "blue.600"}
+          py={1}
+          px={3}
+          alignItems="center"
+          borderBottom="1px solid"
+          borderColor={isTrending ? "orange.800" : "blue.800"}
+          boxShadow="0 2px 8px rgba(0,0,0,0.2)"
+        >
+          <Icon 
+            as={isTrending ? FaFire : FaThumbsUp} 
+            color="white" 
+            mr={2} 
+            boxSize={3} 
+          />
+          <Text fontSize="xs" fontWeight="medium" color="white">
+            {isTrending ? "Trending Now" : sample.recommendationReason}
+          </Text>
+        </Flex>
+      )}
+      
       {/* Background image or color */}
       <Box
         position="absolute"
@@ -204,19 +248,20 @@ const SampleCard = ({ sample, onNext }) => {
         width="100%"
         position="relative"
         zIndex={1}
-        p={{ base: 3, md: 6 }}
+        p={{ base: isCompact ? 3 : 3, md: isCompact ? 4 : 6 }}
         justifyContent="space-between"
         bg="rgba(0, 0, 0, 0.5)"
+        pt={showRecommendation ? 8 : undefined}
       >
         {/* Top section - Sample details */}
         <Flex 
           justifyContent="space-between" 
           width="100%"
-          mb={4}
+          mb={isCompact ? 2 : 4}
         >
           <VStack align="flex-start" spacing={1} maxW="60%">
             <Text 
-              fontSize={{ base: "xl", md: "2xl" }} 
+              fontSize={{ base: isCompact ? "lg" : "xl", md: isCompact ? "xl" : "2xl" }} 
               fontWeight="bold" 
               color="white"
               noOfLines={1}
@@ -225,11 +270,11 @@ const SampleCard = ({ sample, onNext }) => {
               {sample.name}
             </Text>
             <HStack>
-              <Avatar size="sm" src={userData?.photoURL} name={artistName} />
+              <Avatar size={isCompact ? "xs" : "sm"} src={userData?.photoURL} name={artistName} />
               <Text 
                 color="white" 
                 noOfLines={1}
-                fontSize="sm"
+                fontSize={isCompact ? "xs" : "sm"}
                 textShadow="0px 1px 2px rgba(0,0,0,0.8)"
               >
                 {artistName}
@@ -254,11 +299,17 @@ const SampleCard = ({ sample, onNext }) => {
           alignItems="center" 
           flex={1}
           position="relative"
-          my={4}
+          my={isCompact ? 2 : 4}
         >
           <Box
-            width={{ base: "200px", md: "240px" }}
-            height={{ base: "200px", md: "240px" }}
+            width={{ 
+              base: isCompact ? "120px" : "200px", 
+              md: isCompact ? "160px" : "240px" 
+            }}
+            height={{ 
+              base: isCompact ? "120px" : "200px", 
+              md: isCompact ? "160px" : "240px" 
+            }}
             borderRadius="xl"
             overflow="hidden"
             border="4px solid"
@@ -296,14 +347,17 @@ const SampleCard = ({ sample, onNext }) => {
           <IconButton
             position="absolute"
             icon={isPlaying ? <FaPause /> : <FaPlay />}
-            size="lg"
+            size={isCompact ? "md" : "lg"}
             rounded="full"
             colorScheme="red"
-            onClick={handlePlayToggle}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent navigation in compact mode
+              handlePlayToggle();
+            }}
             boxShadow="0 0 24px rgba(229, 62, 62, 0.6)"
-            width="64px"
-            height="64px"
-            fontSize="24px"
+            width={isCompact ? "48px" : "64px"}
+            height={isCompact ? "48px" : "64px"}
+            fontSize={isCompact ? "18px" : "24px"}
             _hover={{
               transform: 'scale(1.1)',
               boxShadow: '0 0 32px rgba(229, 62, 62, 0.8)'
@@ -324,35 +378,50 @@ const SampleCard = ({ sample, onNext }) => {
         
         {/* Tags section */}
         {sample.tags && sample.tags.length > 0 && (
-          <Box width="100%" maxW="500px" mx="auto" mb={4}>
-            <Wrap justify="center" spacing={2}>
-              {sample.tags.map(tag => (
+          <Box width="100%" maxW="500px" mx="auto" mb={isCompact ? 2 : 4}>
+            <Wrap justify="center" spacing={isCompact ? 1 : 2}>
+              {sample.tags.slice(0, isCompact ? 3 : undefined).map(tag => (
                 <WrapItem key={tag}>
                   <Tag 
-                    size="md" 
+                    size={isCompact ? "sm" : "md"} 
                     colorScheme="red" 
                     variant="subtle"
                     borderRadius="full"
-                    px={3}
-                    py={1}
+                    px={isCompact ? 2 : 3}
+                    py={isCompact ? 0.5 : 1}
                   >
                     {tag}
                   </Tag>
                 </WrapItem>
               ))}
+              {isCompact && sample.tags.length > 3 && (
+                <WrapItem>
+                  <Tag
+                    size="sm"
+                    colorScheme="gray"
+                    variant="subtle"
+                    borderRadius="full"
+                  >
+                    +{sample.tags.length - 3} more
+                  </Tag>
+                </WrapItem>
+              )}
             </Wrap>
           </Box>
         )}
         
         {/* Bottom section - Actions */}
-        <HStack spacing={4} justifyContent="center" pt={4}>
+        <HStack spacing={4} justifyContent="center" pt={isCompact ? 2 : 4}>
           <IconButton
             icon={<FaHeart />}
             aria-label="Like"
             rounded="full"
             colorScheme={isLiked ? "red" : "whiteAlpha"}
-            onClick={toggleLike}
-            size="lg"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent navigation in compact mode
+              toggleLike();
+            }}
+            size={isCompact ? "md" : "lg"}
             variant={isLiked ? "solid" : "outline"}
             _hover={{ transform: 'scale(1.1)' }}
             _active={{ transform: 'scale(0.95)' }}
@@ -364,8 +433,11 @@ const SampleCard = ({ sample, onNext }) => {
               aria-label="Add to playlist"
               rounded="full"
               colorScheme="blue"
-              onClick={onOpen}
-              size="lg"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent navigation in compact mode
+                onOpen();
+              }}
+              size={isCompact ? "md" : "lg"}
               _hover={{ transform: 'scale(1.1)' }}
               _active={{ transform: 'scale(0.95)' }}
             />
@@ -380,8 +452,11 @@ const SampleCard = ({ sample, onNext }) => {
                 rounded="full"
                 colorScheme="red"
                 variant="outline"
-                onClick={onOpenDeleteDialog}
-                size="lg"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent navigation in compact mode
+                  onOpenDeleteDialog();
+                }}
+                size={isCompact ? "md" : "lg"}
                 isLoading={isDeleting}
                 _hover={{ transform: 'scale(1.1)', bg: 'red.600', color: 'white' }}
                 _active={{ transform: 'scale(0.95)' }}
@@ -392,78 +467,72 @@ const SampleCard = ({ sample, onNext }) => {
       </Flex>
       
       {/* Playlist modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="sm">
-        <ModalOverlay backdropFilter="blur(5px)" />
-        <ModalContent bg="gray.900" color="white">
-          <ModalHeader>Add to Playlist</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
+      <Modal isOpen={isOpen} onClose={onClose} size="md">
+        <ModalOverlay backdropFilter="blur(10px)" />
+        <ModalContent bg="gray.800" color="white">
+          <ModalHeader fontSize="xl" fontWeight="bold">Add to Playlist</ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody pb={6}>
             {playlistsLoading ? (
-              <Text textAlign="center" py={4}>Loading playlists...</Text>
+              <Flex justify="center" py={4}>
+                <Spinner color="red.500" />
+              </Flex>
             ) : playlists && playlists.length > 0 ? (
-              <List spacing={2}>
+              <List spacing={3}>
                 {playlists.map(playlist => (
-                  <ListItem 
-                    key={playlist.id} 
-                    p={2} 
-                    bg="whiteAlpha.100"
-                    _hover={{ bg: "whiteAlpha.200" }}
-                    borderRadius="md"
-                    cursor={isAdding ? "not-allowed" : "pointer"}
-                    onClick={isAdding ? null : () => handleAddToPlaylist(playlist)}
-                    display="flex"
-                    alignItems="center"
-                    position="relative"
-                    opacity={isAdding ? 0.7 : 1}
-                  >
-                    {isAdding && (
-                      <Box 
-                        position="absolute"
-                        top={0}
-                        left={0}
-                        right={0}
-                        bottom={0}
-                        bg="blackAlpha.700"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        borderRadius="md"
-                        zIndex={2}
-                      >
-                        <Spinner size="sm" color="white" mr={2} />
-                        <Text fontSize="sm">Adding...</Text>
-                      </Box>
-                    )}
-                    
-                    {playlist.coverImage ? (
-                      <Image 
-                        src={playlist.coverImage}
-                        alt={playlist.name}
-                        boxSize="40px"
-                        borderRadius="md"
-                        mr={3}
-                      />
-                    ) : (
-                      <Box
-                        w="40px"
-                        h="40px"
-                        bg={playlist.colorCode || "purple.500"}
-                        borderRadius="md"
-                        mr={3}
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        <Icon as={MdMusicNote} color="white" />
-                      </Box>
-                    )}
-                    <Text>{playlist.name}</Text>
+                  <ListItem key={playlist.id}>
+                    <Button
+                      variant="ghost"
+                      justifyContent="flex-start"
+                      width="100%"
+                      py={2}
+                      px={3}
+                      onClick={() => handleAddToPlaylist(playlist)}
+                      isLoading={isAdding}
+                      _hover={{ bg: "whiteAlpha.200" }}
+                      color="white"
+                    >
+                      <HStack spacing={3} width="100%">
+                        <Box
+                          width="40px"
+                          height="40px"
+                          borderRadius="md"
+                          bg={playlist.coverImage ? "transparent" : "red.500"}
+                          overflow="hidden"
+                        >
+                          {playlist.coverImage ? (
+                            <Image 
+                              src={playlist.coverImage} 
+                              alt={playlist.name} 
+                              width="100%" 
+                              height="100%" 
+                              objectFit="cover"
+                            />
+                          ) : (
+                            <Flex
+                              width="100%"
+                              height="100%"
+                              justifyContent="center"
+                              alignItems="center"
+                            >
+                              <MdMusicNote color="white" size={24} />
+                            </Flex>
+                          )}
+                        </Box>
+                        <VStack align="start" spacing={0} flex={1}>
+                          <Text fontWeight="medium" color="white">{playlist.name}</Text>
+                          <Text fontSize="xs" color="gray.300">
+                            {playlist.tracks?.length || 0} tracks
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </Button>
                   </ListItem>
                 ))}
               </List>
             ) : (
               <VStack spacing={3} py={4}>
-                <Text>You don't have any playlists yet</Text>
+                <Text color="white">You don't have any playlists yet</Text>
                 <Button colorScheme="red" size="sm" as="a" href="/createplaylist">
                   Create Playlist
                 </Button>
@@ -471,7 +540,7 @@ const SampleCard = ({ sample, onNext }) => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button variant="ghost" onClick={onClose}>
+            <Button variant="outline" colorScheme="red" onClick={onClose}>
               Cancel
             </Button>
           </ModalFooter>

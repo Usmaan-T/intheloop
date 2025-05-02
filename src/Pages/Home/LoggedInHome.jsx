@@ -17,7 +17,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { FaCompass, FaFire, FaChevronRight, FaChartLine } from 'react-icons/fa';
+import { FaCompass, FaFire, FaChevronRight, FaChartLine, FaHeart } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
@@ -27,6 +27,7 @@ import HotUserCard from '../../components/User/HotUserCard';
 import { usePopularSamples } from '../../hooks/usePopularSamples';
 import { usePublicPlaylists } from '../../hooks/usePublicPlaylists';
 import usePopularUsers from '../../hooks/usePopularUsers';
+import useFollowedProducersSamples from '../../hooks/useFollowedProducersSamples';
 
 // Motion components
 const MotionBox = motion(Box);
@@ -48,6 +49,13 @@ const LoggedInHome = () => {
     loading: samplesLoading,
     error: samplesError,
   } = usePopularSamples(5, timeRange);
+  
+  // Get samples from followed producers
+  const {
+    samples: followedSamples,
+    loading: followedLoading,
+    error: followedError
+  } = useFollowedProducersSamples(5);
   
   // Update local samples when popularSamples changes
   useEffect(() => {
@@ -454,9 +462,9 @@ const LoggedInHome = () => {
               gap={{ base: 4, sm: 0 }}
             >
               <HStack spacing={3}>
-                <Icon as={FaChartLine} color="green.400" boxSize={6} />
+                <Icon as={FaHeart} color="pink.400" boxSize={6} />
                 <Heading as="h2" size="lg" color="white" fontWeight="semibold">
-                  Featured Artists
+                  From the Producers You Love
                 </Heading>
               </HStack>
 
@@ -464,7 +472,7 @@ const LoggedInHome = () => {
                 as={Link}
                 to="/community"
                 variant="outline"
-                colorScheme="green"
+                colorScheme="pink"
                 rightIcon={<FaChevronRight />}
                 size={{ base: 'md', md: 'md' }}
                 fontWeight="medium"
@@ -485,12 +493,47 @@ const LoggedInHome = () => {
               border="1px solid"
               borderColor="whiteAlpha.200"
               boxShadow="0 4px 20px rgba(0,0,0,0.1)"
-              textAlign="center"
-              py={10}
             >
-              <Text color="gray.400" fontSize="lg">
-                Coming soon: Featured artist profiles and collaborations
-              </Text>
+              {followedLoading ? (
+                <Flex justify="center" py={10}>
+                  <Spinner size="xl" color="pink.500" thickness="4px" />
+                </Flex>
+              ) : followedError ? (
+                <Box bg="red.500" color="white" p={4} borderRadius="md" textAlign="center">
+                  Error loading samples: {followedError}
+                </Box>
+              ) : !followedSamples || followedSamples.length === 0 ? (
+                <Box py={10} textAlign="center">
+                  <Text color="gray.400" fontSize="lg" mb={4}>
+                    You're not following any producers yet, or they haven't uploaded samples.
+                  </Text>
+                  <Button
+                    as={Link}
+                    to="/community"
+                    colorScheme="pink"
+                    size="md"
+                    px={8}
+                  >
+                    Discover Producers to Follow
+                  </Button>
+                </Box>
+              ) : (
+                <VStack spacing={4} align="stretch">
+                  {followedSamples.map((sample, index) => (
+                    <MotionBox
+                      key={sample.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index, duration: 0.4 }}
+                    >
+                      <SampleRow 
+                        track={sample} 
+                        onDelete={handleDeleteSample}
+                      />
+                    </MotionBox>
+                  ))}
+                </VStack>
+              )}
             </Box>
           </MotionBox>
         </Container>

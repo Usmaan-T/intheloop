@@ -30,7 +30,8 @@ import {
   Center,
   Spinner,
   CloseButton,
-  InputRightElement
+  InputRightElement,
+  Image
 } from '@chakra-ui/react';
 import { HamburgerIcon, CloseIcon, ChevronDownIcon, SearchIcon } from '@chakra-ui/icons';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -129,8 +130,13 @@ const NavBar = () => {
       <Flex align="center">
         {/* Logo and Site Name */}
         <HStack spacing={3} as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-          <Heading as="h1" size="lg" fontWeight="bold">
-            In the Loop
+          <Heading 
+            size="xl" 
+            fontWeight="bold" 
+            bgGradient="linear(to-r, white, gray.300)" 
+            bgClip="text"
+          >
+            The Loop
           </Heading>
         </HStack>
 
@@ -353,6 +359,7 @@ const NavBar = () => {
                 to="/auth" 
                 variant="ghost" 
                 _hover={{ bg: "whiteAlpha.200" }}
+                color="white"
               >
                 Sign in
               </Button>
@@ -361,6 +368,7 @@ const NavBar = () => {
                 to="/auth?mode=register" 
                 bg="red.600"
                 _hover={{ bg: "red.700" }}
+                color="white"
               >
                 Register
               </Button>
@@ -391,6 +399,18 @@ const NavBar = () => {
           display={{ base: 'block', md: 'none' }}
           overflow="hidden"
         >
+          {/* Mobile Logo */}
+          <Flex justify="center" mb={4}>
+            <Heading 
+              size="xl" 
+              fontWeight="bold" 
+              bgGradient="linear(to-r, white, gray.300)" 
+              bgClip="text"
+            >
+              The Loop
+            </Heading>
+          </Flex>
+          
           {/* Mobile Search */}
           <InputGroup mb={4}>
             <InputLeftElement pointerEvents="none">
@@ -452,6 +472,7 @@ const NavBar = () => {
                   variant="outline" 
                   flex={1}
                   onClick={onClose}
+                  color="white"
                 >
                   Sign in
                 </Button>
@@ -462,6 +483,7 @@ const NavBar = () => {
                   _hover={{ bg: "red.700" }} 
                   flex={1}
                   onClick={onClose}
+                  color="white"
                 >
                   Register
                 </Button>

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
     Box,
@@ -13,6 +12,7 @@ import {
     useColorModeValue,
     Link
   } from '@chakra-ui/react';
+import logoImage from '../../assets/in-the-loop-high-resolution-logo (1).png';
 
 const Footer = () => {
   return (
@@ -58,7 +58,7 @@ const Footer = () => {
         </VStack>
 
         <VStack align="flex-start" spacing={4}>
-          <Image src="/images/logo.svg" alt="Logo" h="30px" mb={4} />
+          <Image src={logoImage} alt="The Loop Logo" h="40px" mb={4} />
           <Flex gap={4}>
             {[
               { href: 'https://twitter.com', src: '/images/twitter.svg', alt: 'Twitter' },

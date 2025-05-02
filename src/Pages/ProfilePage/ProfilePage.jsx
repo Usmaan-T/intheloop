@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -27,9 +27,12 @@ import CreatePlaylist from '../../components/playlist/CreatePlaylist';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
 import PlaylistsSection from '../../components/Profile/PlaylistsSection';
 import TracksSection from '../../components/Profile/TracksSection';
+import ProfileHeader from '../../components/User/ProfileHeader';
 import useProfileData from '../../hooks/useProfileData';
 import useUserTracks from '../../hooks/useUserTracks';
 import useUserPlaylists from '../../hooks/useUserPlaylists';
+import useUserPopularity from '../../hooks/useUserPopularity';
+import useUserLikes from '../../hooks/useUserLikes';
 
 const ProfilePage = () => {
   // Auth state
@@ -43,12 +46,37 @@ const ProfilePage = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const { playlists, isLoading: playlistsLoading, error: playlistsError } = useUserPlaylists(user?.uid, refreshTrigger);
   
+  // Add popularity score hook to match UserProfilePage
+  const { popularityScore } = useUserPopularity(user?.uid);
+  
+  // Add liked samples hook
+  const { likedSamples, isLoading: likesLoading, error: likesError } = useUserLikes(user?.uid);
+  
   // Disclosure hooks
   const profileDisclosure = useDisclosure();
   const playlistDisclosure = useDisclosure();
   
   // Add toast notification for playlist creation success
   const toast = useToast();
+  
+  // Create a stats object to match UserProfilePage
+  const [userStats, setUserStats] = useState({
+    samples: 0,
+    playlists: 0,
+    followers: 0
+  });
+  
+  // Update stats when data changes
+  useEffect(() => {
+    if (user && profileData) {
+      setUserStats({
+        samples: tracks?.length || 0,
+        playlists: playlists?.length || 0,
+        followers: profileData?.followers?.length || 0,
+        likes: likedSamples?.length || 0
+      });
+    }
+  }, [user, profileData, tracks, playlists, likedSamples]);
   
   // Handlers
   const handleEditClick = () => {
@@ -102,57 +130,29 @@ const ProfilePage = () => {
     );
   }
 
+  // Create a user object that matches the expected structure for ProfileHeader
+  const userProfileData = {
+    id: user.uid,
+    ...profileData,
+    displayName: user.displayName,
+    photoURL: profileData?.photoURL || user.photoURL
+  };
+
   return (
     <>
       <NavBar />
       <Box bgColor="blackAlpha.900" minH="calc(100vh - 80px)">
-        {/* Profile Header - Styled like UserProfilePage */}
-        <Box bg="rgba(20, 20, 30, 0.8)" py={10} borderBottom="1px solid" borderColor="whiteAlpha.200">
-          <Container maxW="container.xl" px={{ base: 4, lg: 8 }}>
-            <Flex 
-              direction={{ base: 'column', md: 'row' }}
-              align={{ base: 'center', md: 'flex-start' }}
-              gap={8}
-            >
-              <Avatar 
-                size="2xl" 
-                name={profileData?.username || user.displayName}
-                src={profileData?.photoURL || user.photoURL}
-                border="4px solid"
-                borderColor="whiteAlpha.300"
-              />
-              
-              <Box flex="1">
-                <Heading color="white" size="xl">
-                  {profileData?.username || user.displayName || 'Your Profile'}
-                </Heading>
-                
-                {profileData?.bio && (
-                  <Text mt={2} color="gray.300">
-                    {profileData.bio}
-                  </Text>
-                )}
-                
-                <HStack mt={4} spacing={4}>
-                  <Text color="gray.400">
-                    <Text as="span" fontWeight="bold" color="white">
-                      {tracks?.length || 0}
-                    </Text> Samples
-                  </Text>
-                  <Text color="gray.400">
-                    <Text as="span" fontWeight="bold" color="white">
-                      {playlists?.length || 0}
-                    </Text> Playlists
-                  </Text>
-                </HStack>
-                
-                <Button mt={4} colorScheme="red" size="md" onClick={handleEditClick}>
-                  Edit Profile
-                </Button>
-              </Box>
-            </Flex>
-          </Container>
-        </Box>
+        {/* Profile Header using the shared ProfileHeader component */}
+        <ProfileHeader 
+          user={userProfileData} 
+          stats={userStats}
+          showFollowButton={false}
+          currentUser={user}
+        >
+          <Button mt={4} colorScheme="red" size="md" onClick={handleEditClick}>
+            Edit Profile
+          </Button>
+        </ProfileHeader>
         
         {/* Profile Content - Using Tabs like UserProfilePage */}
         <Container maxW="container.xl" py={10} px={{ base: 4, lg: 8 }}>
@@ -164,91 +164,81 @@ const ProfilePage = () => {
             </TabList>
             
             <TabPanels>
-              {/* Samples Tab - Now First */}
+              {/* Samples Tab */}
               <TabPanel px={0}>
-                <Box mb={6}>
-                  <Flex justify="space-between" align="center" mb={4}>
-                    <Heading as="h2" size="md" color="white">
-                      Your Samples
-                    </Heading>
-                    <Button 
-                      as="a" 
-                      href="/upload" 
-                      colorScheme="red" 
-                      size="sm"
-                    >
-                      Upload Sample
-                    </Button>
-                  </Flex>
-                  
-                  <Box
-                    bg="rgba(20, 20, 30, 0.8)"
-                    borderRadius="lg"
-                    p={{ base: 5, md: 8 }}
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
+                <Flex justify="flex-end" mb={4}>
+                  <Button 
+                    as="a" 
+                    href="/upload" 
+                    colorScheme="red" 
+                    size="sm"
                   >
-                    {tracksLoading ? (
-                      <Flex justify="center" py={10}>
-                        <Spinner size="xl" color="red.500" thickness="4px" />
-                      </Flex>
-                    ) : tracksError ? (
-                      <Text color="red.300" textAlign="center">Error loading your samples</Text>
-                    ) : tracks && tracks.length > 0 ? (
-                      <TracksSection 
-                        tracks={tracks}
-                        isLoading={false}
-                        error={null}
-                        showHeader={false}
-                      />
-                    ) : (
-                      <Text color="gray.400" textAlign="center">No samples uploaded yet</Text>
-                    )}
-                  </Box>
+                    Upload Sample
+                  </Button>
+                </Flex>
+                
+                <Box
+                  bg="rgba(20, 20, 30, 0.8)"
+                  borderRadius="lg"
+                  p={{ base: 5, md: 8 }}
+                  border="1px solid"
+                  borderColor="whiteAlpha.200"
+                >
+                  {tracksLoading ? (
+                    <Flex justify="center" py={10}>
+                      <Spinner size="xl" color="red.500" thickness="4px" />
+                    </Flex>
+                  ) : tracksError ? (
+                    <Text color="red.300" textAlign="center">Error loading your samples</Text>
+                  ) : tracks && tracks.length > 0 ? (
+                    <TracksSection 
+                      tracks={tracks}
+                      isLoading={false}
+                      error={null}
+                      showHeader={false}
+                    />
+                  ) : (
+                    <Text color="gray.400" textAlign="center">No samples uploaded yet</Text>
+                  )}
                 </Box>
               </TabPanel>
               
-              {/* Playlists Tab - Now Second */}
+              {/* Playlists Tab */}
               <TabPanel px={0}>
-                <Box mb={6}>
-                  <Flex justify="space-between" align="center" mb={4}>
-                    <Heading as="h2" size="md" color="white">
-                      Your Playlists
-                    </Heading>
-                    <Button 
-                      onClick={playlistDisclosure.onOpen} 
-                      colorScheme="red" 
-                      size="sm"
-                    >
-                      Create Playlist
-                    </Button>
-                  </Flex>
-                  
-                  <Box
-                    bg="rgba(20, 20, 30, 0.8)"
-                    borderRadius="lg"
-                    p={{ base: 5, md: 8 }}
-                    border="1px solid"
-                    borderColor="whiteAlpha.200"
+                <Flex justify="flex-end" mb={4}>
+                  <Button 
+                    onClick={playlistDisclosure.onOpen} 
+                    colorScheme="red" 
+                    size="sm"
                   >
-                    {playlistsLoading ? (
-                      <Flex justify="center" py={10}>
-                        <Spinner size="xl" color="red.500" thickness="4px" />
-                      </Flex>
-                    ) : playlistsError ? (
-                      <Text color="red.300" textAlign="center">Error loading your playlists</Text>
-                    ) : playlists && playlists.length > 0 ? (
-                      <PlaylistsSection 
-                        playlists={playlists}
-                        isLoading={false}
-                        error={null}
-                        onAddClick={null}
-                        showHeader={false}
-                      />
-                    ) : (
-                      <Text color="gray.400" textAlign="center">No playlists yet</Text>
-                    )}
-                  </Box>
+                    Create Playlist
+                  </Button>
+                </Flex>
+                
+                <Box
+                  bg="rgba(20, 20, 30, 0.8)"
+                  borderRadius="lg"
+                  p={{ base: 5, md: 8 }}
+                  border="1px solid"
+                  borderColor="whiteAlpha.200"
+                >
+                  {playlistsLoading ? (
+                    <Flex justify="center" py={10}>
+                      <Spinner size="xl" color="red.500" thickness="4px" />
+                    </Flex>
+                  ) : playlistsError ? (
+                    <Text color="red.300" textAlign="center">Error loading your playlists</Text>
+                  ) : playlists && playlists.length > 0 ? (
+                    <PlaylistsSection 
+                      playlists={playlists}
+                      isLoading={false}
+                      error={null}
+                      onAddClick={null}
+                      showHeader={false}
+                    />
+                  ) : (
+                    <Text color="gray.400" textAlign="center">No playlists yet</Text>
+                  )}
                 </Box>
               </TabPanel>
               
@@ -261,16 +251,31 @@ const ProfilePage = () => {
                   border="1px solid"
                   borderColor="whiteAlpha.200"
                 >
-                  <Text color="gray.400" textAlign="center">Liked content will appear here</Text>
+                  {likesLoading ? (
+                    <Flex justify="center" py={10}>
+                      <Spinner size="xl" color="red.500" thickness="4px" />
+                    </Flex>
+                  ) : likesError ? (
+                    <Text color="red.300" textAlign="center">Error loading your liked samples</Text>
+                  ) : likedSamples && likedSamples.length > 0 ? (
+                    <TracksSection 
+                      tracks={likedSamples}
+                      isLoading={false}
+                      error={null}
+                      showHeader={false}
+                    />
+                  ) : (
+                    <Text color="gray.400" textAlign="center">No liked samples yet</Text>
+                  )}
                 </Box>
               </TabPanel>
             </TabPanels>
           </Tabs>
         </Container>
       </Box>
-
-      {/* Edit Profile Modal - Keep existing functionality */}
-      <EditProfileModal
+      
+      {/* Modals */}
+      <EditProfileModal 
         isOpen={profileDisclosure.isOpen}
         onClose={profileDisclosure.onClose}
         initialData={profileData}
@@ -279,9 +284,8 @@ const ProfilePage = () => {
         isUpdating={isUpdating}
       />
       
-      {/* Create Playlist Modal - Keep existing functionality */}
-      <CreatePlaylist 
-        isOpen={playlistDisclosure.isOpen} 
+      <CreatePlaylist
+        isOpen={playlistDisclosure.isOpen}
         onClose={playlistDisclosure.onClose}
         onSuccess={handlePlaylistCreated}
       />

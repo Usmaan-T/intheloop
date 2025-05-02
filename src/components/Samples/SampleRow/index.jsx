@@ -8,150 +8,34 @@ import {
   Badge,
   IconButton,
   HStack,
+  useDisclosure,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Button,
 } from '@chakra-ui/react';
-import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload } from 'react-icons/fa';
+import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
 import Waveform from '../../Waveform/Waveform';
 import useLikeSample from '../../../hooks/useLikeSample';
 import useAudioPlayback from '../../../hooks/useAudioPlayback';
 import useDownloadTrack from '../../../hooks/useDownloadTrack';
+import useTrackSampleView from '../../../hooks/useTrackSampleView';
+import useDeleteSample from '../../../hooks/useDeleteSample';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../../firebase/firebase';
 import ArtistInfo from './ArtistInfo';
 import SampleCover from './SampleCover';
 import TagsList from './TagsList';
 
-const SampleRow = ({ track }) => {
-  // Use our custom hooks for audio playback and download
-  const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
-  const { downloadTrack, downloadLoading } = useDownloadTrack();
-  const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
-  
-  return (
-    <Box
-      bg="rgba(20, 20, 30, 0.8)"
-      borderRadius="lg"
-      overflow="hidden"
-      mb={4}
-      border="1px solid"
-      borderColor="whiteAlpha.200"
-      transition="all 0.2s"
-      _hover={{ 
-        transform: 'translateY(-2px)', 
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)', 
-        bg: 'rgba(25, 25, 35, 0.8)' 
-      }}
-      position="relative"
-    >
-      <Flex
-        p={4}
-        direction={{ base: 'column', lg: 'row' }}
-        alignItems={{ base: 'flex-start', lg: 'center' }}
-        justifyContent="space-between"
-        gap={4}
-      >
-        {/* Left section with Play button and artwork */}
-        <Flex alignItems="center" gap={4} flex="1">
-          {/* Play/Pause button */}
-          <IconButton
-            icon={isPlaying ? <FaPause /> : <FaPlay />}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            isRound
-            colorScheme="red"
-            size="md"
-            onClick={handlePlayToggle}
-            boxShadow="0 0 10px rgba(229, 62, 62, 0.4)"
-          />
-          
-          {/* Cover Image - Using our new component */}
-          <SampleCover track={track} />
+// This is now just a re-export of the main SampleRow component
+// to maintain backward compatibility
+import SampleRowMain from '../SampleRow';
 
-          {/* Track Details */}
-          <Box flex="1" minW={0}>
-            <Text fontWeight="bold" fontSize="md" color="white" noOfLines={1}>
-              {track.name}
-            </Text>
-            
-            {/* Artist Info - Using our new component */}
-            <ArtistInfo userId={track.userId} />
-            
-            {/* Tags - Using our new component */}
-            <TagsList tags={track.tags} />
-          </Box>
-        </Flex>
-
-        {/* Right side actions section */}
-        <Flex 
-          alignItems="center" 
-          gap={4}
-          justifyContent="flex-end"
-          minW={{ lg: '240px' }}
-        >
-          {/* Sound properties */}
-          <HStack spacing={2}>
-            <Badge colorScheme="red" px={2} py={1} borderRadius="full">
-              {track.bpm} BPM
-            </Badge>
-            <Badge colorScheme="blue" px={2} py={1} borderRadius="full">
-              {track.key}
-            </Badge>
-          </HStack>
-
-          {/* Action buttons */}
-          <HStack spacing={2}>
-            {/* Like button */}
-            <Tooltip label={isLiked ? "Unlike" : "Like"}>
-              <IconButton
-                icon={<FaHeart />}
-                aria-label={isLiked ? "Unlike" : "Like"}
-                size="sm"
-                isRound
-                colorScheme={isLiked ? "red" : "whiteAlpha"}
-                variant={isLiked ? "solid" : "ghost"}
-                onClick={toggleLike}
-                isLoading={likeLoading}
-              />
-            </Tooltip>
-            
-            {/* Add to playlist button */}
-            <Tooltip label="Add to playlist">
-              <IconButton
-                icon={<FaPlus />}
-                aria-label="Add to playlist"
-                size="sm"
-                isRound
-                colorScheme="whiteAlpha"
-                variant="ghost"
-              />
-            </Tooltip>
-            
-            {/* Download button */}
-            <Tooltip label="Download">
-              <IconButton
-                icon={<FaDownload />}
-                aria-label="Download sample"
-                size="sm"
-                isRound
-                colorScheme="whiteAlpha"
-                variant="ghost"
-                onClick={() => downloadTrack(track)}
-                isLoading={downloadLoading}
-                _hover={{ bg: "whiteAlpha.300" }}
-              />
-            </Tooltip>
-          </HStack>
-        </Flex>
-      </Flex>
-      
-      {/* Waveform section - always visible */}
-      <Box p={4} pt={0} height="80px">
-        <Waveform audioUrl={track.audioUrl} />
-        <audio 
-          ref={audioRef}
-          src={track.audioUrl}
-          onEnded={handleAudioEnd}
-          preload="auto"
-        />
-      </Box>
-    </Box>
-  );
+const SampleRow = (props) => {
+  return <SampleRowMain {...props} />;
 };
 
 export default SampleRow;

@@ -13,21 +13,36 @@ import {
   Tooltip,
   Circle,
   useBreakpointValue,
-  Container
+  Container,
+  Badge,
+  Wrap,
+  WrapItem
 } from '@chakra-ui/react';
-import { FaRandom, FaChevronUp, FaChevronDown, FaMusic, FaShare } from 'react-icons/fa';
+import { FaRandom, FaChevronUp, FaChevronDown, FaMusic, FaShare, FaUser, FaSignInAlt } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import SampleCard from '../../components/Explore/SampleCard';
 import useExploreData from '../../hooks/useExploreData';
 import Footer from '../../components/footer/Footer';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../../firebase/firebase';
+import { Link } from 'react-router-dom';
 
 // Motion components
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
 
 const ExplorePage = () => {
-  const { samples, loading, error, fetchMoreSamples, hasMore, refreshSamples } = useExploreData(15);
+  const [user] = useAuthState(auth);
+  const { 
+    samples, 
+    loading, 
+    error, 
+    fetchMoreSamples, 
+    hasMore, 
+    refreshSamples,
+    topTags 
+  } = useExploreData(15);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(null);
   const touchStartY = useRef(0);
@@ -109,7 +124,7 @@ const ExplorePage = () => {
     handleInteraction();
     toast({
       title: "Refreshed",
-      description: "Found new samples for you",
+      description: user ? "Found new personalized samples for you" : "Found new samples to explore",
       status: "success",
       duration: 2000,
       isClosable: true,
@@ -143,7 +158,7 @@ const ExplorePage = () => {
               fontWeight="medium"
               textAlign="center"
             >
-              Discovering trending samples...
+              {user ? "Finding samples for you..." : "Discovering trending samples..."}
             </Text>
           </VStack>
         </Flex>
@@ -203,7 +218,7 @@ const ExplorePage = () => {
           onMouseMove={handleInteraction}
           onWheel={handleWheel}
         >
-          {/* Page title with fade effect */}
+          {/* Page title with personalization badge */}
           <MotionFlex 
             position="absolute" 
             top={0} 
@@ -220,9 +235,39 @@ const ExplorePage = () => {
             alignItems="center"
             justifyContent="space-between"
           >
-            <Heading size="lg" color="white" fontWeight="bold">
-              Discover
-            </Heading>
+            <VStack align="flex-start" spacing={1}>
+              <Heading size="lg" color="white" fontWeight="bold">
+                Discover
+              </Heading>
+              {user && (
+                <HStack spacing={2}>
+                  <FaUser color="white" size={14} />
+                  <Text color="whiteAlpha.800" fontSize="sm">
+                    Personalized for you
+                  </Text>
+                </HStack>
+              )}
+              
+              {/* Top tags that influenced recommendations */}
+              {user && topTags && topTags.length > 0 && (
+                <Wrap mt={1} spacing={1}>
+                  {topTags.slice(0, 3).map((tag, index) => (
+                    <WrapItem key={index}>
+                      <Badge 
+                        colorScheme="red" 
+                        variant="subtle" 
+                        px={2} 
+                        py={0.5} 
+                        borderRadius="full"
+                        fontSize="xs"
+                      >
+                        {tag}
+                      </Badge>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              )}
+            </VStack>
             
             <IconButton
               icon={<FaRandom />}
@@ -350,6 +395,27 @@ const ExplorePage = () => {
                   Share
                 </Text>
               </VStack>
+              
+              {!user && (
+                <VStack spacing={1}>
+                  <Circle
+                    as={Link}
+                    to="/login"
+                    size={controlsSize === "lg" ? "48px" : "40px"}
+                    bg="red.500"
+                    color="white"
+                    cursor="pointer"
+                    transition="all 0.2s"
+                    _hover={{ transform: 'scale(1.1)', bg: "red.600" }}
+                    boxShadow="0px 2px 5px rgba(0,0,0,0.3)"
+                  >
+                    <FaSignInAlt size={controlsSize === "lg" ? 18 : 14} />
+                  </Circle>
+                  <Text color="white" fontSize="xs" textShadow="0px 1px 2px rgba(0,0,0,0.5)">
+                    Sign in
+                  </Text>
+                </VStack>
+              )}
             </MotionFlex>
             
             {/* Progress dots (TikTok style) - Only on desktop */}
@@ -465,10 +531,49 @@ const ExplorePage = () => {
               </Box>
             </MotionFlex>
             
+            {/* Login prompt for anonymous users - Bottom center */}
+            {!user && (
+              <MotionFlex
+                position="absolute"
+                bottom="5%"
+                left="50%"
+                transform="translateX(-50%)"
+                zIndex={26}
+                initial={{ opacity: 0 }}
+                animate={{ 
+                  opacity: showControls ? 1 : 0,
+                  y: showControls ? 0 : 10
+                }}
+                transition={{ duration: 0.3 }}
+                alignItems="center"
+                justifyContent="center"
+                pointerEvents="auto"
+              >
+                <Box
+                  as={Link}
+                  to="/login"
+                  bg="red.500"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  boxShadow="0px 2px 6px rgba(0,0,0,0.3)"
+                  _hover={{ bg: "red.600", transform: "scale(1.05)" }}
+                  transition="all 0.2s"
+                >
+                  <HStack spacing={2}>
+                    <FaSignInAlt color="white" size={14} />
+                    <Text color="white" fontSize="sm" fontWeight="bold">
+                      Sign in for personalized samples
+                    </Text>
+                  </HStack>
+                </Box>
+              </MotionFlex>
+            )}
+            
             {/* Swipe instruction indicator - Bottom center, only shows initially */}
             <MotionFlex
               position="absolute"
-              bottom={8}
+              bottom={!user ? "13%" : "8%"}
               left="50%"
               transform="translateX(-50%)"
               zIndex={25}
