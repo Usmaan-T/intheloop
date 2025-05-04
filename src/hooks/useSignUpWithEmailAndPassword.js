@@ -28,15 +28,19 @@ const useSignUpWithEmailAndPassword = () => {
             }
             if(newUser) {
                 const userDoc = {
-                    uid:newUser.user.uid,
-                    email:inputs.email,
-                    username:inputs.username,
-                    bio:"",
-                    profilePicURL:"",
-                    followers:[],
-                    following:[],
-                    posts:[],
-                    createdAt:Date.now()
+                    uid: newUser.user.uid,
+                    email: inputs.email,
+                    username: inputs.username,
+                    bio: "",
+                    profilePicURL: "",
+                    followers: [],
+                    following: [],
+                    posts: [],
+                    createdAt: Date.now(),
+                    currentStreak: 0,
+                    longestStreak: 0,
+                    lastUploadDate: null,
+                    streakUpdatedToday: false
                 }
                 await setDoc(doc(firestore, "users", newUser.user.uid), userDoc);
                 localStorage.setItem("user-info", JSON.stringify(userDoc));

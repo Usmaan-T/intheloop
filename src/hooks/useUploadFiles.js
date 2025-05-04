@@ -5,6 +5,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, storage, firestore } from '../firebase/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import useUserStreak from './useUserStreak';
 
 const useUploadFiles = () => {
   const [audioUpload, setAudioUpload] = useState(null);
@@ -17,6 +18,9 @@ const useUploadFiles = () => {
     bpm: '',
     tags: ''
   });
+  
+  // Add streak hook
+  const { updateStreakOnUpload } = useUserStreak(user?.uid);
 
   const uploadAudio = async () => {
     if (!audioUpload) {
@@ -57,6 +61,10 @@ const useUploadFiles = () => {
 
       // Save the post object in Firestore under the "posts" collection
       await addDoc(collection(firestore, 'posts'), post);
+      
+      // Update the user's streak after successful upload
+      await updateStreakOnUpload();
+      
       console.log('Post saved successfully!');
     } catch (error) {
       console.error('Error uploading audio: ', error);
