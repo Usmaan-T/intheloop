@@ -17,7 +17,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { FaCompass, FaFire, FaChevronRight, FaChartLine, FaHeart } from 'react-icons/fa';
+import { FaCompass, FaFire, FaChevronRight, FaChartLine, FaHeart, FaUpload } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
@@ -92,71 +92,179 @@ const LoggedInHome = () => {
     <>
       <NavBar />
 
-      <Box bgColor="blackAlpha.900" minH="100vh" position="relative" overflow="hidden">
+      <Box bg="darkBg.800" minH="100vh" position="relative" overflow="hidden">
+        {/* Background animated elements */}
+        <MotionBox
+          position="absolute"
+          height="500px"
+          width="500px"
+          borderRadius="full"
+          bgGradient="radial(brand.500, brand.700)"
+          filter="blur(120px)"
+          opacity="0.15"
+          top="-200px"
+          right="-100px"
+          zIndex={0}
+          animate={{
+            x: [0, 50, 0],
+            y: [0, 30, 0],
+          }}
+          transition={{
+            duration: 25,
+            repeat: Infinity,
+            ease: 'easeInOut',
+          }}
+        />
+        
         <MotionBox
           position="absolute"
           height="400px"
           width="400px"
           borderRadius="full"
-          bgGradient="radial(red.600, red.900)"
-          filter="blur(90px)"
-          opacity="0.2"
-          top="-150px"
-          right="-100px"
+          bgGradient="radial(accent.purple.500, accent.purple.700)"
+          filter="blur(100px)"
+          opacity="0.1"
+          bottom="-100px"
+          left="-100px"
           zIndex={0}
           animate={{
-            x: [0, 40, 0],
-            y: [0, 20, 0],
+            x: [0, -30, 0],
+            y: [0, 40, 0],
           }}
           transition={{
             duration: 20,
             repeat: Infinity,
             ease: 'easeInOut',
+            delay: 1,
           }}
         />
 
         <MotionBox
           as="section"
-          bgGradient="linear(to-r, red.900, #6F0A14, red.900)"
-          backgroundSize="200% 100%"
-          borderBottom="1px solid"
-          borderColor="whiteAlpha.200"
+          bgGradient="linear(to-r, darkBg.900, darkBg.800, darkBg.900)"
           position="relative"
-          py={{ base: 12, md: 16 }}
+          py={{ base: 16, md: 24 }}
           px={4}
           textAlign="center"
-          boxShadow="0 4px 20px rgba(0,0,0,0.2)"
+          borderBottom="1px solid"
+          borderColor="whiteAlpha.100"
+          boxShadow="0 10px 30px -5px rgba(0, 0, 0, 0.3)"
+          overflow="hidden"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 1 }}
         >
-          <Container maxW="container.xl">
-            <Heading
-              as="h1"
-              size={headingSize}
-              mb={4}
-              color="white"
-              fontWeight="bold"
-              bgGradient="linear(to-r, white, whiteAlpha.800)"
-              bgClip="text"
-              letterSpacing="-1px"
+          {/* Animated gradient line */}
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            height="4px"
+            bgGradient="linear(to-r, transparent, brand.500, accent.pink.500, accent.purple.500, transparent)"
+            as={motion.div}
+            animate={{
+              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+          />
+          
+          <Container maxW="container.xl" position="relative" zIndex={1}>
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2, duration: 0.8 }}
             >
-              Welcome to the Loop
-            </Heading>
-            <Text
-              fontSize={{ base: 'lg', md: 'xl' }}
+              <Heading
+                as="h1"
+                fontSize={{ base: '4xl', md: '5xl', lg: '6xl' }}
+                mb={6}
+                fontWeight="bold"
+                bgGradient="linear(to-r, white, brand.100)"
+                bgClip="text"
+                letterSpacing="tight"
+                lineHeight="1.1"
+              >
+                Welcome to <Box as="span" color="brand.400">The Loop</Box>
+              </Heading>
+            </MotionBox>
+            
+            <MotionBox
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.8 }}
               maxW="container.md"
               mx="auto"
-              mb={8}
-              color="gray.300"
-              fontWeight="medium"
             >
-              Discover trending samples, explore playlists from the community, and get inspired.
-            </Text>
+              <Text
+                fontSize={{ base: 'lg', md: 'xl' }}
+                mb={10}
+                color="whiteAlpha.800"
+                fontWeight="medium"
+                lineHeight="1.6"
+              >
+                Discover trending samples, create unique soundscapes, and connect with producers from around the world. Your next hit starts here.
+              </Text>
+            </MotionBox>
+            
+            <MotionBox
+              display="flex"
+              justifyContent="center"
+              gap={5}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+            >
+              <Button
+                as={Link}
+                to="/explore"
+                size="lg"
+                px={8}
+                py={6}
+                bgGradient="linear(to-r, brand.500, brand.600)"
+                _hover={{
+                  bgGradient: "linear(to-r, brand.600, brand.700)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 10px 25px -5px rgba(214, 34, 34, 0.4)",
+                }}
+                rightIcon={<FaCompass />}
+                fontWeight="medium"
+                fontSize="md"
+                transition="all 0.3s"
+              >
+                Explore Music
+              </Button>
+              
+              <Button
+                as={Link}
+                to="/upload"
+                size="lg"
+                px={8}
+                py={6}
+                variant="outline"
+                borderColor="brand.500"
+                borderWidth="2px"
+                _hover={{
+                  bg: "rgba(214, 34, 34, 0.1)",
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
+                }}
+                rightIcon={<FaUpload />}
+                fontWeight="medium"
+                fontSize="md"
+                transition="all 0.3s"
+              >
+                Upload Track
+              </Button>
+            </MotionBox>
           </Container>
         </MotionBox>
 
-        <Container maxW="container.xl" py={{ base: 8, md: 10 }}>
+        <Container maxW="container.xl" py={{ base: 12, md: 16 }}>
           {/* Hot Users Section */}
           <MotionBox
             mb={10}

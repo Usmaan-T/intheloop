@@ -18,6 +18,7 @@ import {
   Button,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
 import useAudioPlayback from '../../hooks/useAudioPlayback';
@@ -29,6 +30,10 @@ import { auth } from '../../firebase/firebase';
 import ArtistInfo from './SampleRow/ArtistInfo';
 import SampleCover from './SampleRow/SampleCover';
 import TagsList from './SampleRow/TagsList';
+
+const MotionBox = motion(Box);
+const MotionFlex = motion(Flex);
+const MotionIconButton = motion(IconButton);
 
 const SampleRow = ({ track, onDelete }) => {
   // Use our custom hooks for audio playback and download
@@ -70,20 +75,23 @@ const SampleRow = ({ track, onDelete }) => {
   };
   
   return (
-    <Box
-      bg="rgba(20, 20, 30, 0.8)"
-      borderRadius="lg"
+    <MotionBox
+      bg="rgba(20, 20, 30, 0.7)"
+      backdropFilter="blur(8px)"
+      borderRadius="xl"
       overflow="hidden"
       mb={4}
       border="1px solid"
       borderColor="whiteAlpha.200"
-      transition="all 0.2s"
-      _hover={{ 
-        transform: 'translateY(-2px)', 
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)', 
-        bg: 'rgba(25, 25, 35, 0.8)' 
+      transition="all 0.3s ease"
+      whileHover={{ 
+        y: -5, 
+        boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1)",
+        borderColor: "whiteAlpha.300"
       }}
       position="relative"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
     >
       <Flex
         p={4}
@@ -95,14 +103,21 @@ const SampleRow = ({ track, onDelete }) => {
         {/* Left section with Play button and artwork */}
         <Flex alignItems="center" gap={4} flex="1">
           {/* Play/Pause button */}
-          <IconButton
+          <MotionIconButton
             icon={isPlaying ? <FaPause /> : <FaPlay />}
             aria-label={isPlaying ? "Pause" : "Play"}
             isRound
-            colorScheme="red"
+            bgGradient={isPlaying ? "linear(to-r, brand.600, brand.500)" : "linear(to-r, brand.500, brand.400)"}
+            _hover={{ 
+              bgGradient: isPlaying ? "linear(to-r, brand.700, brand.600)" : "linear(to-r, brand.600, brand.500)",
+              transform: "scale(1.1)"
+            }}
             size="md"
             onClick={handlePlayToggle}
-            boxShadow="0 0 10px rgba(229, 62, 62, 0.4)"
+            boxShadow="0 0 15px rgba(214, 34, 34, 0.3)"
+            color="white"
+            transition="all 0.2s"
+            whileTap={{ scale: 0.95 }}
           />
           
           {/* Cover Image - Using our new component */}
@@ -110,7 +125,15 @@ const SampleRow = ({ track, onDelete }) => {
 
           {/* Track Details */}
           <Box flex="1" minW={0}>
-            <Text fontWeight="bold" fontSize="md" color="white" noOfLines={1}>
+            <Text 
+              fontWeight="bold" 
+              fontSize="md" 
+              color="white" 
+              noOfLines={1}
+              bgGradient="linear(to-r, white, whiteAlpha.800)"
+              bgClip="text"
+              letterSpacing="tight"
+            >
               {track.name}
             </Text>
             
@@ -131,19 +154,39 @@ const SampleRow = ({ track, onDelete }) => {
         >
           {/* Sound properties */}
           <HStack spacing={2}>
-            <Badge colorScheme="red" px={2} py={1} borderRadius="full">
-              {track.bpm} BPM
-            </Badge>
-            <Badge colorScheme="blue" px={2} py={1} borderRadius="full">
-              {track.key}
-            </Badge>
+            {track.bpm && (
+              <Badge 
+                bgGradient="linear(to-r, brand.500, accent.pink.500)"
+                color="white"
+                px={2} 
+                py={1} 
+                borderRadius="full"
+                fontWeight="medium"
+                fontSize="xs"
+              >
+                {track.bpm} BPM
+              </Badge>
+            )}
+            {track.key && (
+              <Badge 
+                bgGradient="linear(to-r, accent.blue.500, accent.purple.500)"
+                color="white"
+                px={2} 
+                py={1} 
+                borderRadius="full"
+                fontWeight="medium"
+                fontSize="xs"
+              >
+                {track.key}
+              </Badge>
+            )}
           </HStack>
 
           {/* Action buttons */}
           <HStack spacing={2}>
             {/* Like button */}
             <Tooltip label={isLiked ? "Unlike" : "Like"}>
-              <IconButton
+              <MotionIconButton
                 icon={<FaHeart />}
                 aria-label={isLiked ? "Unlike" : "Like"}
                 size="sm"
@@ -152,24 +195,30 @@ const SampleRow = ({ track, onDelete }) => {
                 variant={isLiked ? "solid" : "ghost"}
                 onClick={toggleLike}
                 isLoading={likeLoading}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition="all 0.2s"
               />
             </Tooltip>
             
             {/* Add to playlist button */}
             <Tooltip label="Add to playlist">
-              <IconButton
+              <MotionIconButton
                 icon={<FaPlus />}
                 aria-label="Add to playlist"
                 size="sm"
                 isRound
                 colorScheme="whiteAlpha"
                 variant="ghost"
+                whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                whileTap={{ scale: 0.95 }}
+                transition="all 0.2s"
               />
             </Tooltip>
             
             {/* Download button */}
             <Tooltip label="Download">
-              <IconButton
+              <MotionIconButton
                 icon={<FaDownload />}
                 aria-label="Download sample"
                 size="sm"
@@ -178,14 +227,16 @@ const SampleRow = ({ track, onDelete }) => {
                 variant="ghost"
                 onClick={() => downloadTrack(track)}
                 isLoading={downloadLoading}
-                _hover={{ bg: "whiteAlpha.300" }}
+                whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
+                whileTap={{ scale: 0.95 }}
+                transition="all 0.2s"
               />
             </Tooltip>
             
             {/* Delete button - Only visible to sample owner */}
             {isOwner && (
               <Tooltip label="Delete">
-                <IconButton
+                <MotionIconButton
                   icon={<FaTrash />}
                   aria-label="Delete sample"
                   size="sm"
@@ -194,7 +245,9 @@ const SampleRow = ({ track, onDelete }) => {
                   variant="ghost"
                   onClick={onOpen}
                   isLoading={isDeleting}
-                  _hover={{ bg: "red.700" }}
+                  whileHover={{ scale: 1.1, backgroundColor: "rgba(229, 62, 62, 0.2)" }}
+                  whileTap={{ scale: 0.95 }}
+                  transition="all 0.2s"
                 />
               </Tooltip>
             )}
@@ -221,7 +274,7 @@ const SampleRow = ({ track, onDelete }) => {
           
           <Tooltip label="Likes">
             <HStack spacing={1}>
-              <Icon as={FaHeart} />
+              <Icon as={FaHeart} color="brand.400" />
               <Text>{likeCount}</Text>
             </HStack>
           </Tooltip>
@@ -229,11 +282,23 @@ const SampleRow = ({ track, onDelete }) => {
           {track.popularityScores && (
             <Tooltip label="Popularity Score">
               <HStack spacing={1}>
-                <Badge colorScheme="purple" variant="solid" fontSize="xs">
+                <Badge 
+                  bgGradient="linear(to-r, accent.purple.500, accent.purple.600)" 
+                  variant="solid" 
+                  fontSize="xs"
+                  borderRadius="full"
+                  px={2}
+                >
                   {Math.round(track.popularityScores.allTime || 0)}
                 </Badge>
                 {track.popularityScores?.daily && (
-                  <Badge colorScheme="red" variant="solid" fontSize="xs">
+                  <Badge 
+                    bgGradient="linear(to-r, brand.500, brand.600)" 
+                    variant="solid" 
+                    fontSize="xs"
+                    borderRadius="full"
+                    px={2}
+                  >
                     +{Math.round(track.popularityScores.daily)}
                   </Badge>
                 )}
@@ -244,8 +309,25 @@ const SampleRow = ({ track, onDelete }) => {
       </Flex>
       
       {/* Waveform section - always visible */}
-      <Box p={4} pt={0} height="80px">
-        <Waveform audioUrl={track.audioUrl} />
+      <Box 
+        p={4} 
+        pt={0} 
+        height="80px"
+        bg="rgba(0, 0, 0, 0.2)"
+        borderTop="1px solid"
+        borderColor="whiteAlpha.100"
+      >
+        <Waveform 
+          audioUrl={track.audioUrl} 
+          options={{
+            waveColor: 'rgba(255, 255, 255, 0.4)',
+            progressColor: isLiked ? 'rgba(229, 62, 62, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+            cursorColor: 'rgba(229, 62, 62, 0.8)',
+            barWidth: 2,
+            barGap: 3,
+            barRadius: 1
+          }}
+        />
         <audio 
           ref={audioRef}
           src={track.audioUrl}
@@ -261,7 +343,13 @@ const SampleRow = ({ track, onDelete }) => {
         onClose={onClose}
       >
         <AlertDialogOverlay>
-          <AlertDialogContent bg="gray.800" color="white">
+          <AlertDialogContent 
+            bg="rgba(20, 20, 30, 0.95)"
+            backdropFilter="blur(10px)"
+            borderColor="whiteAlpha.200"
+            color="white"
+            boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.6)"
+          >
             <AlertDialogHeader fontSize="lg" fontWeight="bold">
               Delete Sample
             </AlertDialogHeader>
@@ -271,11 +359,21 @@ const SampleRow = ({ track, onDelete }) => {
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onClose} variant="outline">
+              <Button 
+                ref={cancelRef} 
+                onClick={onClose} 
+                variant="outline"
+                _hover={{ bg: "whiteAlpha.100" }}
+                _active={{ bg: "whiteAlpha.200" }}
+              >
                 Cancel
               </Button>
               <Button 
-                colorScheme="red" 
+                bgGradient="linear(to-r, brand.500, brand.600)"
+                _hover={{ 
+                  bgGradient: "linear(to-r, brand.600, brand.700)",
+                  transform: "translateY(-2px)"
+                }}
                 onClick={handleDeleteConfirm} 
                 ml={3}
                 isLoading={isDeleting}
@@ -286,7 +384,7 @@ const SampleRow = ({ track, onDelete }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
-    </Box>
+    </MotionBox>
   );
 };
 
