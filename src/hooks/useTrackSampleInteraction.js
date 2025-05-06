@@ -14,7 +14,10 @@ import { calculateUserPopularity } from './useUserPopularity';
  * Updates both real-time counters and time-based popularity stats
  */
 export const trackSampleInteraction = async (sampleId, interactionType, userId = null, isRemoval = false) => {
-  if (!sampleId) return;
+  if (!sampleId) {
+    console.error('No sampleId provided to trackSampleInteraction');
+    return;
+  }
   
   try {
     const incrementValue = isRemoval ? -1 : 1;
@@ -87,8 +90,9 @@ export const trackSampleInteraction = async (sampleId, interactionType, userId =
     // Update popularity scores after interaction
     await updatePopularityScores(sampleId);
     
+    return true;
   } catch (error) {
-    console.error(`Error tracking ${interactionType}:`, error);
+    console.error('Error tracking sample interaction:', error);
     throw error;
   }
 };

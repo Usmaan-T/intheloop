@@ -69,10 +69,10 @@ const NavBar = () => {
   const navItems = [
     { name: "Home", path: "/", icon: <FaHome /> },
     { name: "Explore", path: "/explore", icon: <FaCompass /> },
+    { name: "Daily", path: "/daily", icon: <FaCalendarDay /> },
     { name: "Samples", path: "/samples", icon: <FaHeadphones /> },
     { name: "Upload", path: "/upload", icon: <FaUpload /> },
     { name: "Profile", path: "/profilepage", icon: <FaUser /> },
-    { name: "Daily", path: "/marketplace", icon: <FaCalendarDay /> },
     { name: "Community", path: "/community", icon: <FaUsers /> },
   ];
 

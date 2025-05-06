@@ -15,6 +15,7 @@ import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
 import UserProfilePage from './Pages/User/UserProfilePage'
 import SamplesPage from './Pages/Samples/SamplesPage'
+import DailyPage from './Pages/Daily/DailyPage'
 import useUserStreak from './hooks/useUserStreak'
 import { resetDailyStreakFlags } from './utils/streakUtils'
 
@@ -67,6 +68,7 @@ const App = () => {
       <Route path='/profilepage' element={<ProfilePage />} />
       <Route path='/explore' element={<ExplorePage />} />
       <Route path='/samples' element={<SamplesPage />} />
+      <Route path='/daily' element={<DailyPage />} />
       <Route path='/createplaylist' element={<CreatePlaylist />} />
       <Route path='/admin/migration' element={<SchemaMigrationPage />} />
       <Route path='/playlist/:id' element={<PlaylistDetailPage />} />

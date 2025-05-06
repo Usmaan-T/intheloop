@@ -42,7 +42,7 @@ import {
   Badge,
   Tooltip
 } from '@chakra-ui/react';
-import { FaSearch, FaFilter, FaTags, FaChevronRight, FaMusic, FaGuitar, FaInfoCircle } from 'react-icons/fa';
+import { FaSearch, FaFilter, FaTags, FaChevronRight, FaMusic, FaGuitar, FaInfoCircle, FaCheck } from 'react-icons/fa';
 import { IoMdRefresh } from 'react-icons/io';
 import { MdMusicNote, MdSpeed, MdMood } from 'react-icons/md';
 import { useSearchParams, useNavigate } from 'react-router-dom';
@@ -714,187 +714,384 @@ const SamplesPage = () => {
               )}
             </Flex>
             
-            {/* Category Tag Selection - Remove Key from here */}
+            {/* Tags Filter Section - Improved Design */}
             <Box 
-              bg="rgba(20, 20, 30, 0.7)" 
-              backdropFilter="blur(8px)"
-              borderRadius="xl" 
-              mb={6} 
-              p={5}
-              borderWidth="1px"
-              borderColor="whiteAlpha.200"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.1)"
               as={motion.div}
-              whileHover={{ boxShadow: "0 10px 40px rgba(0, 0, 0, 0.2)" }}
-              transition={{ duration: 0.3 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              bg="rgba(30, 30, 45, 0.7)"
+              backdropFilter="blur(10px)"
+              borderRadius="xl"
+              borderWidth="1px"
+              borderColor="rgba(255, 255, 255, 0.1)"
+              overflow="hidden"
+              p={4}
+              mt={6}
+              mb={6}
+              boxShadow="0 10px 30px -5px rgba(0, 0, 0, 0.3)"
             >
-              {/* Multi-tag selection info */}
-              <Flex mb={5} alignItems="center" justifyContent="space-between">
-                <HStack>
-                  <Heading size="md" color="white" fontWeight="semibold">Filter by Tags</Heading>
-                  <Badge 
-                    colorScheme="brand" 
-                    fontSize="xs" 
-                    borderRadius="full" 
-                    py={1} 
-                    px={3}
-                  >
-                    {selectedTags.length} selected
-                  </Badge>
-                </HStack>
-                
-                <HStack spacing={4}>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    colorScheme="brand" 
-                    leftIcon={<FaChevronRight transform="rotate(90deg)" />}
-                    onClick={() => toggleAllCategories(true, 'main')}
-                    _hover={{ bg: "rgba(214, 34, 34, 0.1)" }}
-                    fontWeight="medium"
-                  >
-                    Expand All
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="ghost" 
-                    colorScheme="brand" 
-                    leftIcon={<FaChevronRight transform="rotate(270deg)" />}
-                    onClick={() => toggleAllCategories(false, 'main')}
-                    _hover={{ bg: "rgba(214, 34, 34, 0.1)" }}
-                    fontWeight="medium"
-                  >
-                    Collapse All
-                  </Button>
-                </HStack>
+              <Flex 
+                align="center" 
+                mb={4}
+                pb={3}
+                borderBottom="1px solid"
+                borderColor="whiteAlpha.200"
+              >
+                <Icon 
+                  as={FaTags} 
+                  color="red.400" 
+                  boxSize={5} 
+                  mr={3}
+                />
+                <Heading size="md" fontWeight="semibold" color="white">
+                  Filter by Tags
+                </Heading>
               </Flex>
               
-              {/* Accordion-style tag selection */}
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={5}>
-                {Object.entries(SAMPLE_TAGS)
-                  .filter(([category]) => category !== 'key') // Skip key category here
-                  .map(([category, tags]) => (
-                  <Box 
-                    key={category} 
-                    bg="rgba(25, 25, 35, 0.6)" 
-                    borderRadius="lg" 
-                    overflow="hidden"
-                    borderWidth="1px"
-                    borderColor={
-                      category === 'genre' ? 'rgba(229, 62, 62, 0.3)' :
-                      category === 'mood' ? 'rgba(66, 153, 225, 0.3)' :
-                      category === 'instrument' ? 'rgba(72, 187, 120, 0.3)' :
-                      category === 'tempo' ? 'rgba(159, 122, 234, 0.3)' :
-                      'whiteAlpha.300'
-                    }
-                    as={motion.div}
-                    whileHover={{ 
-                      y: -3, 
-                      boxShadow: 
-                        category === 'genre' ? '0 5px 15px rgba(229, 62, 62, 0.2)' :
-                        category === 'mood' ? '0 5px 15px rgba(66, 153, 225, 0.2)' :
-                        category === 'instrument' ? '0 5px 15px rgba(72, 187, 120, 0.2)' :
-                        category === 'tempo' ? '0 5px 15px rgba(159, 122, 234, 0.2)' :
-                        '0 5px 15px rgba(255, 255, 255, 0.1)'
+              {/* Tags Categories in Pills */}
+              <Tabs 
+                variant="soft-rounded" 
+                colorScheme="red" 
+                size="md" 
+                isFitted 
+                mb={6}
+                mt={2}
+              >
+                <TabList 
+                  bg="rgba(0, 0, 0, 0.2)" 
+                  p={1.5} 
+                  borderRadius="full" 
+                  mb={6}
+                  overflowX="auto"
+                  css={{
+                    scrollbarWidth: 'none',
+                    '&::-webkit-scrollbar': {
+                      display: 'none',
+                    },
+                  }}
+                >
+                  <Tab 
+                    _selected={{ 
+                      color: 'white', 
+                      bg: 'red.600',
+                      fontWeight: 'bold' 
                     }}
-                    transition={{ duration: 0.3 }}
+                    borderRadius="full"
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.300"
+                    _hover={{
+                      color: 'white',
+                      bg: 'rgba(255, 255, 255, 0.08)'
+                    }}
+                    px={4}
                   >
-                    <Flex 
-                      align="center" 
-                      justify="space-between"
-                      p={4}
-                      cursor="pointer"
-                      onClick={() => toggleCategory(category, 'main')}
-                      bgGradient={
-                        category === 'genre' ? 'linear(to-r, brand.600, brand.500)' :
-                        category === 'mood' ? 'linear(to-r, accent.blue.600, accent.blue.500)' :
-                        category === 'instrument' ? 'linear(to-r, green.600, green.500)' :
-                        category === 'tempo' ? 'linear(to-r, accent.purple.600, accent.purple.500)' :
-                        'linear(to-r, gray.700, gray.600)'
-                      }
-                      _hover={{ 
-                        bgGradient:
-                          category === 'genre' ? 'linear(to-r, brand.500, brand.400)' :
-                          category === 'mood' ? 'linear(to-r, accent.blue.500, accent.blue.400)' :
-                          category === 'instrument' ? 'linear(to-r, green.500, green.400)' :
-                          category === 'tempo' ? 'linear(to-r, accent.purple.500, accent.purple.400)' :
-                          'linear(to-r, gray.600, gray.500)'
-                      }}
-                      transition="all 0.3s"
-                    >
-                      <HStack>
-                        <Icon as={getCategoryIcon(category)} color="white" boxSize={5} mr={2} />
-                        <Text color="white" fontWeight="semibold" fontSize="md" textTransform="capitalize">
-                          {category}
-                        </Text>
-                      </HStack>
-                      <HStack>
-                        <Badge 
-                          variant="solid" 
-                          bg="whiteAlpha.300"
-                          color="white"
-                          fontSize="xs"
-                          borderRadius="full"
-                        >
-                          {selectedTags.filter(tag => SAMPLE_TAGS[category].includes(tag)).length} / {tags.length}
-                        </Badge>
-                        <Icon 
-                          as={FaChevronRight} 
-                          color="white" 
-                          transform={expandedCategories.main.includes(category) ? "rotate(90deg)" : "rotate(0deg)"}
-                          transition="transform 0.3s"
-                        />
-                      </HStack>
-                    </Flex>
-                    <Box 
-                      style={{
-                        maxHeight: expandedCategories.main.includes(category) ? '300px' : '0px',
-                        opacity: expandedCategories.main.includes(category) ? 1 : 0,
-                        padding: expandedCategories.main.includes(category) ? '16px' : '0 16px',
-                        overflow: 'hidden',
-                        transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
-                      }}
+                    Genre
+                  </Tab>
+                  <Tab 
+                    _selected={{ 
+                      color: 'white', 
+                      bg: 'blue.600',
+                      fontWeight: 'bold' 
+                    }}
+                    borderRadius="full"
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.300"
+                    _hover={{
+                      color: 'white',
+                      bg: 'rgba(255, 255, 255, 0.08)'
+                    }}
+                    px={4}
+                  >
+                    Mood
+                  </Tab>
+                  <Tab 
+                    _selected={{ 
+                      color: 'white', 
+                      bg: 'green.600',
+                      fontWeight: 'bold' 
+                    }}
+                    borderRadius="full"
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.300"
+                    _hover={{
+                      color: 'white',
+                      bg: 'rgba(255, 255, 255, 0.08)'
+                    }}
+                    px={4}
+                  >
+                    Instrument
+                  </Tab>
+                  <Tab 
+                    _selected={{ 
+                      color: 'white', 
+                      bg: 'purple.600',
+                      fontWeight: 'bold' 
+                    }}
+                    borderRadius="full"
+                    fontSize="sm"
+                    fontWeight="medium"
+                    color="gray.300"
+                    _hover={{
+                      color: 'white',
+                      bg: 'rgba(255, 255, 255, 0.08)'
+                    }}
+                    px={4}
+                  >
+                    Tempo
+                  </Tab>
+                </TabList>
+
+                <TabPanels>
+                  {/* Genre Tags */}
+                  <TabPanel p={0}>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
                     >
                       <Wrap spacing={2}>
-                        {tags.map(tag => (
+                        {SAMPLE_TAGS.genre.map(tag => (
                           <WrapItem key={tag}>
-                            <Tag
-                              size="md"
-                              borderRadius="full"
-                              variant={selectedTags.includes(tag) ? "solid" : "outline"}
-                              colorScheme={
-                                category === 'genre' ? 'red' :
-                                category === 'mood' ? 'blue' :
-                                category === 'instrument' ? 'green' :
-                                category === 'tempo' ? 'purple' :
-                                'gray'
-                              }
-                              cursor="pointer"
-                              onClick={() => handleTagSelect(tag)}
-                              whiteSpace="nowrap"
-                              px={3}
-                              py={2}
-                              opacity={selectedTags.includes(tag) ? 1 : 0.7}
-                              transition="all 0.2s"
-                              _hover={{ 
-                                opacity: 1,
-                                transform: selectedTags.includes(tag) ? 'none' : 'translateY(-2px)',
-                                boxShadow: "0 4px 6px rgba(0,0,0,0.1)"
-                              }}
-                              fontWeight="medium"
-                              as={motion.div}
-                              whileTap={{ scale: 0.95 }}
+                            <MotionBox
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                              transition={{ duration: 0.2 }}
                             >
-                              <TagLabel>{tag}</TagLabel>
-                            </Tag>
+                              <Tag
+                                size="lg"
+                                colorScheme="red"
+                                variant={selectedTags.includes(tag) ? "solid" : "subtle"}
+                                cursor="pointer"
+                                onClick={() => handleTagSelect(tag)}
+                                px={3}
+                                py={2}
+                                borderRadius="full"
+                                fontWeight={selectedTags.includes(tag) ? "bold" : "medium"}
+                                opacity={selectedTags.includes(tag) ? 1 : 0.8}
+                                boxShadow={selectedTags.includes(tag) ? "0 0 0 1px rgba(255,255,255,0.2)" : "none"}
+                                _hover={{ opacity: 1 }}
+                              >
+                                {selectedTags.includes(tag) && (
+                                  <Icon as={FaCheck} mr={1} boxSize={3} />
+                                )}
+                                {tag}
+                              </Tag>
+                            </MotionBox>
                           </WrapItem>
                         ))}
                       </Wrap>
-                    </Box>
-                  </Box>
-                ))}
-              </SimpleGrid>
+                    </motion.div>
+                  </TabPanel>
+
+                  {/* Mood Tags */}
+                  <TabPanel p={0}>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Wrap spacing={2}>
+                        {SAMPLE_TAGS.mood.map(tag => (
+                          <WrapItem key={tag}>
+                            <MotionBox
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Tag
+                                size="lg"
+                                colorScheme="blue"
+                                variant={selectedTags.includes(tag) ? "solid" : "subtle"}
+                                cursor="pointer"
+                                onClick={() => handleTagSelect(tag)}
+                                px={3}
+                                py={2}
+                                borderRadius="full"
+                                fontWeight={selectedTags.includes(tag) ? "bold" : "medium"}
+                                opacity={selectedTags.includes(tag) ? 1 : 0.8}
+                                boxShadow={selectedTags.includes(tag) ? "0 0 0 1px rgba(255,255,255,0.2)" : "none"}
+                                _hover={{ opacity: 1 }}
+                              >
+                                {selectedTags.includes(tag) && (
+                                  <Icon as={FaCheck} mr={1} boxSize={3} />
+                                )}
+                                {tag}
+                              </Tag>
+                            </MotionBox>
+                          </WrapItem>
+                        ))}
+                      </Wrap>
+                    </motion.div>
+                  </TabPanel>
+
+                  {/* Instrument Tags */}
+                  <TabPanel p={0}>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Wrap spacing={2}>
+                        {SAMPLE_TAGS.instrument.map(tag => (
+                          <WrapItem key={tag}>
+                            <MotionBox
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Tag
+                                size="lg"
+                                colorScheme="green"
+                                variant={selectedTags.includes(tag) ? "solid" : "subtle"}
+                                cursor="pointer"
+                                onClick={() => handleTagSelect(tag)}
+                                px={3}
+                                py={2}
+                                borderRadius="full"
+                                fontWeight={selectedTags.includes(tag) ? "bold" : "medium"}
+                                opacity={selectedTags.includes(tag) ? 1 : 0.8}
+                                boxShadow={selectedTags.includes(tag) ? "0 0 0 1px rgba(255,255,255,0.2)" : "none"}
+                                _hover={{ opacity: 1 }}
+                              >
+                                {selectedTags.includes(tag) && (
+                                  <Icon as={FaCheck} mr={1} boxSize={3} />
+                                )}
+                                {tag}
+                              </Tag>
+                            </MotionBox>
+                          </WrapItem>
+                        ))}
+                      </Wrap>
+                    </motion.div>
+                  </TabPanel>
+
+                  {/* Tempo Tags */}
+                  <TabPanel p={0}>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.3 }}
+                    >
+                      <Wrap spacing={2}>
+                        {SAMPLE_TAGS.tempo.map(tag => (
+                          <WrapItem key={tag}>
+                            <MotionBox
+                              whileHover={{ y: -2, boxShadow: "0 4px 8px rgba(0,0,0,0.3)" }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              <Tag
+                                size="lg"
+                                colorScheme="purple"
+                                variant={selectedTags.includes(tag) ? "solid" : "subtle"}
+                                cursor="pointer"
+                                onClick={() => handleTagSelect(tag)}
+                                px={3}
+                                py={2}
+                                borderRadius="full"
+                                fontWeight={selectedTags.includes(tag) ? "bold" : "medium"}
+                                opacity={selectedTags.includes(tag) ? 1 : 0.8}
+                                boxShadow={selectedTags.includes(tag) ? "0 0 0 1px rgba(255,255,255,0.2)" : "none"}
+                                _hover={{ opacity: 1 }}
+                              >
+                                {selectedTags.includes(tag) && (
+                                  <Icon as={FaCheck} mr={1} boxSize={3} />
+                                )}
+                                {tag}
+                              </Tag>
+                            </MotionBox>
+                          </WrapItem>
+                        ))}
+                      </Wrap>
+                    </motion.div>
+                  </TabPanel>
+                </TabPanels>
+              </Tabs>
+              
+              {/* Search for tags */}
+              <InputGroup mb={4} size="md">
+                <InputLeftElement pointerEvents="none">
+                  <FaSearch color="gray.300" />
+                </InputLeftElement>
+                <Input
+                  placeholder="Search tags..."
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  bg="rgba(0, 0, 0, 0.3)"
+                  border="1px solid"
+                  borderColor="whiteAlpha.300"
+                  color="white"
+                  _placeholder={{ color: "gray.400" }}
+                  _hover={{ borderColor: "whiteAlpha.400" }}
+                  _focus={{ borderColor: "red.400", boxShadow: "0 0 0 1px var(--chakra-colors-red-400)" }}
+                />
+              </InputGroup>
             </Box>
+            
+            {/* Active Tags Display - Improved Style */}
+            {selectedTags.length > 0 && (
+              <MotionBox
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                bg="rgba(20, 20, 30, 0.8)"
+                backdropFilter="blur(12px)"
+                borderRadius="xl"
+                borderWidth="1px"
+                borderColor="whiteAlpha.200"
+                p={4}
+                mb={6}
+                boxShadow="0 10px 30px -5px rgba(0, 0, 0, 0.3)"
+              >
+                <Flex justify="space-between" align="center" mb={3}>
+                  <HStack>
+                    <Icon as={FaFilter} color="brand.400" />
+                    <Text color="white" fontWeight="semibold">
+                      Active Filters
+                    </Text>
+                  </HStack>
+                  <Button
+                    size="xs"
+                    colorScheme="gray"
+                    variant="ghost"
+                    onClick={clearFilters}
+                    _hover={{ bg: "whiteAlpha.100" }}
+                  >
+                    Clear All
+                  </Button>
+                </Flex>
+                
+                <Wrap spacing={2}>
+                  {selectedTags.map(tag => (
+                    <WrapItem key={tag}>
+                      <MotionBox
+                        whileHover={{ y: -2, scale: 1.03 }}
+                        whileTap={{ scale: 0.97 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <Tag
+                          size="md"
+                          borderRadius="full"
+                          variant="solid"
+                          colorScheme={getTagColorScheme(tag)}
+                          boxShadow="0 2px 10px rgba(0,0,0,0.2)"
+                          py={1.5}
+                          px={3}
+                        >
+                          <TagLabel fontWeight="medium">{tag}</TagLabel>
+                          <TagCloseButton 
+                            onClick={() => handleTagSelect(tag)}
+                            ml={1}
+                            boxSize={4}
+                            _hover={{ bg: "rgba(0,0,0,0.2)" }}
+                          />
+                        </Tag>
+                      </MotionBox>
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              </MotionBox>
+            )}
           </MotionBox>
           
           {/* Samples Box */}
