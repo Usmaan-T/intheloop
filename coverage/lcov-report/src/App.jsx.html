@@ -140,7 +140,13 @@
 <a name='L75'></a><a href='#L75'>75</a>
 <a name='L76'></a><a href='#L76'>76</a>
 <a name='L77'></a><a href='#L77'>77</a>
-<a name='L78'></a><a href='#L78'>78</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -157,19 +163,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -177,6 +170,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -201,6 +211,8 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -230,12 +242,15 @@ import ProfilePage from './Pages/ProfilePage/ProfilePage'
 import CreatePlaylist from './components/Playlist/CreatePlaylist'
 import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
+import AdminDashboard from './Pages/Admin/AdminDashboard'
 import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
 import UserProfilePage from './Pages/User/UserProfilePage'
 import SamplesPage from './Pages/Samples/SamplesPage'
+import DailyPage from './Pages/Daily/DailyPage'
 import useUserStreak from './hooks/useUserStreak'
 import { resetDailyStreakFlags } from './utils/streakUtils'
+import { isAdmin } from './utils/adminUtils'
 &nbsp;
 const App = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
   const [user, loading] = <span class="cstat-no" title="statement not covered" >useAuthState(auth);</span>
@@ -255,9 +270,10 @@ const App = <span class="cstat-no" title="statement not covered" ><span class="f
   // In a real app, this should be moved to a server-side scheduled function.
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
     // Only let admin users manually reset all streaks (for testing/admin purposes)
-    const isAdmin = <span class="cstat-no" title="statement not covered" >user?.email === 'admin@example.com';</span> // Replace with your admin check
+    // const isAdmin = user?.email === 'admin@example.com'; // Replace with your admin check
+    const adminUser = <span class="cstat-no" title="statement not covered" >isAdmin(user);</span>
     
-<span class="cstat-no" title="statement not covered" >    if (isAdmin) {</span>
+<span class="cstat-no" title="statement not covered" >    if (adminUser) {</span>
       const now = <span class="cstat-no" title="statement not covered" >new Date();</span>
       const hours = <span class="cstat-no" title="statement not covered" >now.getHours();</span>
       
@@ -286,8 +302,10 @@ const App = <span class="cstat-no" title="statement not covered" ><span class="f
       &lt;Route path='/profilepage' element={&lt;ProfilePage /&gt;} /&gt;
       &lt;Route path='/explore' element={&lt;ExplorePage /&gt;} /&gt;
       &lt;Route path='/samples' element={&lt;SamplesPage /&gt;} /&gt;
+      &lt;Route path='/daily' element={&lt;DailyPage /&gt;} /&gt;
       &lt;Route path='/createplaylist' element={&lt;CreatePlaylist /&gt;} /&gt;
       &lt;Route path='/admin/migration' element={&lt;SchemaMigrationPage /&gt;} /&gt;
+      &lt;Route path='/admin/dashboard' element={&lt;AdminDashboard /&gt;} /&gt;
       &lt;Route path='/playlist/:id' element={&lt;PlaylistDetailPage /&gt;} /&gt;
       &lt;Route path="/user/:userId" element={&lt;UserProfilePage /&gt;} /&gt;
     &lt;/Routes&gt;
@@ -301,7 +319,7 @@ export default App</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T17:28:18.243Z
+                at 2025-05-07T21:14:38.007Z
             </div>
         <script src="../prettify.js"></script>
         <script>

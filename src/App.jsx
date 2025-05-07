@@ -11,6 +11,7 @@ import ProfilePage from './Pages/ProfilePage/ProfilePage'
 import CreatePlaylist from './components/Playlist/CreatePlaylist'
 import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
+import AdminDashboard from './Pages/Admin/AdminDashboard'
 import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
 import UserProfilePage from './Pages/User/UserProfilePage'
@@ -18,6 +19,7 @@ import SamplesPage from './Pages/Samples/SamplesPage'
 import DailyPage from './Pages/Daily/DailyPage'
 import useUserStreak from './hooks/useUserStreak'
 import { resetDailyStreakFlags } from './utils/streakUtils'
+import { isAdmin } from './utils/adminUtils'
 
 const App = () => {
   const [user, loading] = useAuthState(auth);
@@ -37,9 +39,10 @@ const App = () => {
   // In a real app, this should be moved to a server-side scheduled function.
   useEffect(() => {
     // Only let admin users manually reset all streaks (for testing/admin purposes)
-    const isAdmin = user?.email === 'admin@example.com'; // Replace with your admin check
+    // const isAdmin = user?.email === 'admin@example.com'; // Replace with your admin check
+    const adminUser = isAdmin(user);
     
-    if (isAdmin) {
+    if (adminUser) {
       const now = new Date();
       const hours = now.getHours();
       
@@ -71,6 +74,7 @@ const App = () => {
       <Route path='/daily' element={<DailyPage />} />
       <Route path='/createplaylist' element={<CreatePlaylist />} />
       <Route path='/admin/migration' element={<SchemaMigrationPage />} />
+      <Route path='/admin/dashboard' element={<AdminDashboard />} />
       <Route path='/playlist/:id' element={<PlaylistDetailPage />} />
       <Route path="/user/:userId" element={<UserProfilePage />} />
     </Routes>

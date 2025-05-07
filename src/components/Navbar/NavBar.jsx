@@ -46,8 +46,9 @@ import { auth } from '../../firebase/firebase';
 import { useLogout } from '../../hooks/useLogout';
 import { motion } from 'framer-motion';
 import { useLocation, Link as RouterLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard } from 'react-icons/fa';
+import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard, FaShieldAlt, FaDatabase } from 'react-icons/fa';
 import useFindUsers from '../../hooks/useFindUsers';
+import { isAdmin } from '../../utils/adminUtils';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -99,6 +100,9 @@ const NavBar = () => {
   const [isListeningForVoice, setIsListeningForVoice] = useState(false);
   const [showSearchHelp, setShowSearchHelp] = useState(false);
   const searchTimeoutRef = useRef(null);
+
+  // Update to use the isAdmin utility function
+  const isAdminUser = isAdmin(user);
 
   // Handle search input with debounce
   const handleSearchInput = (e) => {
@@ -646,6 +650,40 @@ const NavBar = () => {
                     <Link as={RouterLink} to="/settings" py={3} px={4} _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}>
                       Settings
                     </Link>
+                    
+                    {isAdminUser && (
+                      <>
+                        <Divider borderColor="whiteAlpha.200" />
+                        <Text px={4} py={2} fontSize="xs" color="whiteAlpha.600" fontWeight="bold">
+                          ADMIN
+                        </Text>
+                        <Link 
+                          as={RouterLink} 
+                          to="/admin/dashboard" 
+                          py={3} 
+                          px={4}
+                          display="flex"
+                          alignItems="center"
+                          _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                        >
+                          <FaShieldAlt color="red.300" style={{ marginRight: '8px' }} />
+                          Dashboard
+                        </Link>
+                        <Link 
+                          as={RouterLink} 
+                          to="/admin/migration" 
+                          py={3} 
+                          px={4}
+                          display="flex"
+                          alignItems="center"
+                          _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                        >
+                          <FaDatabase color="blue.300" style={{ marginRight: '8px' }} />
+                          Schema Migration
+                        </Link>
+                      </>
+                    )}
+                    
                     <Divider borderColor="whiteAlpha.200" />
                     <Button 
                       onClick={handleLogout} 
@@ -790,6 +828,42 @@ const NavBar = () => {
                   <Avatar size="sm" src={user.photoURL || undefined} mr={3} />
                   <Text fontWeight="medium">{user.displayName || user.email?.split('@')[0]}</Text>
                 </Flex>
+                
+                {isAdminUser && (
+                  <>
+                    <Divider borderColor="whiteAlpha.200" />
+                    <Text p={2} fontSize="xs" color="whiteAlpha.600" fontWeight="bold">
+                      ADMIN
+                    </Text>
+                    <Link 
+                      as={RouterLink} 
+                      to="/admin/dashboard" 
+                      py={3}
+                      px={2}
+                      display="flex"
+                      alignItems="center"
+                      onClick={onClose}
+                      _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                    >
+                      <Box mr={3} fontSize="lg"><FaShieldAlt /></Box>
+                      <Text fontSize="lg">Admin Dashboard</Text>
+                    </Link>
+                    <Link 
+                      as={RouterLink} 
+                      to="/admin/migration" 
+                      py={3}
+                      px={2}
+                      display="flex"
+                      alignItems="center"
+                      onClick={onClose}
+                      _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                    >
+                      <Box mr={3} fontSize="lg"><FaDatabase /></Box>
+                      <Text fontSize="lg">Schema Migration</Text>
+                    </Link>
+                  </>
+                )}
+                
                 <Button 
                   onClick={handleLogout} 
                   variant="ghost" 

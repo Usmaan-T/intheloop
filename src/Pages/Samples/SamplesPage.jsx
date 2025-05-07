@@ -544,7 +544,7 @@ const SamplesPage = () => {
               flexDirection={{ base: "column", md: "row" }}
               alignItems={{ base: "stretch", md: "center" }}
             >
-              {/* Musical Key Filter */}
+              {/* Musical Key Filter - NEW DESIGN */}
               <Box 
                 width={{ base: "full", md: "300px" }}
                 bg="rgba(20, 20, 30, 0.7)"
@@ -568,92 +568,105 @@ const SamplesPage = () => {
                   <Icon as={MdMusicNote} color="white" mr={2} />
                   <Text fontWeight="medium" color="white">Musical Key</Text>
                 </Flex>
-                <Menu closeOnSelect={true}>
-                  <MenuButton
-                    as={Button}
-                    rightIcon={<FaChevronRight transform="rotate(90deg)" />}
-                    bg="transparent"
-                    color="white"
-                    _hover={{ bg: "whiteAlpha.100" }}
-                    _active={{ bg: "whiteAlpha.200" }}
-                    width="full"
-                    borderRadius="0"
-                    justifyContent="space-between"
-                    py={3}
-                    px={4}
-                    transition="all 0.2s"
-                  >
-                    {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "Select Key"}
-                  </MenuButton>
-                  <MenuList 
-                    bg="rgba(20, 20, 30, 0.95)"
-                    backdropFilter="blur(10px)"
-                    borderColor="whiteAlpha.200"
-                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.4)"
-                    maxH="300px" 
-                    overflowY="auto"
-                  >
-                    <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold">Major Keys</Text>
-                    {SAMPLE_TAGS.key
-                      .filter(key => !key.includes('m'))
-                      .map(key => (
-                        <MenuItem 
-                          key={key} 
-                          onClick={() => {
-                            // Remove any previously selected key
-                            const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                            // Add the new key
-                            setSelectedTags([...newTags, key]);
-                            setTimeout(() => refreshSamples(), 0);
-                          }}
-                          bg="transparent"
-                          _hover={{ bg: "orange.700" }}
-                          color="white"
-                          fontSize="sm"
-                          fontWeight="medium"
-                        >
-                          {key}
-                        </MenuItem>
-                      ))
-                    }
-                    <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold" mt={2}>Minor Keys</Text>
-                    {SAMPLE_TAGS.key
-                      .filter(key => key.includes('m'))
-                      .map(key => (
-                        <MenuItem 
-                          key={key} 
-                          onClick={() => {
-                            // Remove any previously selected key
-                            const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                            // Add the new key
-                            setSelectedTags([...newTags, key]);
-                            setTimeout(() => refreshSamples(), 0);
-                          }}
-                          bg="transparent"
-                          _hover={{ bg: "orange.700" }}
-                          color="white"
-                          fontSize="sm"
-                          fontWeight="medium"
-                        >
-                          {key}
-                        </MenuItem>
-                      ))
-                    }
-                    <Divider my={2} borderColor="whiteAlpha.300" />
-                    <MenuItem 
-                      bg="transparent"
-                      _hover={{ bg: "whiteAlpha.100" }}
-                      color="gray.300"
+                
+                {/* Current selection display */}
+                <Flex
+                  justifyContent="space-between"
+                  alignItems="center"
+                  px={4}
+                  py={3}
+                  borderBottomWidth="1px"
+                  borderColor="whiteAlpha.200"
+                >
+                  <Text color="white" fontWeight="medium">
+                    {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "None selected"}
+                  </Text>
+                  
+                  {selectedTags.some(tag => SAMPLE_TAGS.key.includes(tag)) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      color="whiteAlpha.700"
                       onClick={() => {
                         const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
                         setSelectedTags(newTags);
                         setTimeout(() => refreshSamples(), 0);
                       }}
+                      _hover={{ color: "white", bg: "whiteAlpha.100" }}
                     >
-                      Clear Key Filter
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
+                      Clear
+                    </Button>
+                  )}
+                </Flex>
+                
+                {/* Key selector grid */}
+                <Box p={3}>
+                  <Text color="orange.300" fontSize="sm" fontWeight="bold" mb={2}>Major Keys</Text>
+                  <SimpleGrid columns={4} spacing={1} mb={3}>
+                    {SAMPLE_TAGS.key
+                      .filter(key => !key.includes('m'))
+                      .map(key => {
+                        const isSelected = selectedTags.includes(key);
+                        return (
+                          <Button
+                            key={key}
+                            size="sm"
+                            variant={isSelected ? "solid" : "outline"}
+                            colorScheme="orange"
+                            onClick={() => {
+                              // Remove any previously selected key
+                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                              // Add the new key if not already selected, otherwise just remove it
+                              if (!isSelected) {
+                                newTags.push(key);
+                              }
+                              setSelectedTags(newTags);
+                              setTimeout(() => refreshSamples(), 0);
+                            }}
+                            fontWeight="medium"
+                            py={1}
+                            height="auto"
+                          >
+                            {key}
+                          </Button>
+                        );
+                      })
+                    }
+                  </SimpleGrid>
+                  
+                  <Text color="orange.300" fontSize="sm" fontWeight="bold" mb={2}>Minor Keys</Text>
+                  <SimpleGrid columns={4} spacing={1}>
+                    {SAMPLE_TAGS.key
+                      .filter(key => key.includes('m'))
+                      .map(key => {
+                        const isSelected = selectedTags.includes(key);
+                        return (
+                          <Button
+                            key={key}
+                            size="sm"
+                            variant={isSelected ? "solid" : "outline"}
+                            colorScheme="orange"
+                            onClick={() => {
+                              // Remove any previously selected key
+                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                              // Add the new key if not already selected, otherwise just remove it
+                              if (!isSelected) {
+                                newTags.push(key);
+                              }
+                              setSelectedTags(newTags);
+                              setTimeout(() => refreshSamples(), 0);
+                            }}
+                            fontWeight="medium"
+                            py={1}
+                            height="auto"
+                          >
+                            {key}
+                          </Button>
+                        );
+                      })
+                    }
+                  </SimpleGrid>
+                </Box>
               </Box>
               
               {/* Active Tags Display */}
@@ -1379,106 +1392,128 @@ const SamplesPage = () => {
 
               <Divider borderColor="whiteAlpha.200" />
               
-              {/* Musical Key Filter */}
-              <Box>
-                <Flex align="center" mb={4}>
-                  <Icon as={MdMusicNote} color="orange.400" boxSize={5} />
-                  <Text ml={3} fontWeight="bold" fontSize="lg">Musical Key</Text>
+              {/* Musical Key Filter - NEW DESIGN */}
+              <Box 
+                width={{ base: "full", md: "300px" }}
+                bg="rgba(20, 20, 30, 0.7)"
+                backdropFilter="blur(8px)"
+                borderRadius="xl"
+                borderWidth="1px"
+                borderColor="accent.orange.500"
+                overflow="hidden"
+                transition="all 0.3s ease"
+                _hover={{
+                  boxShadow: "0 5px 15px rgba(0,0,0,0.2)",
+                  borderColor: "accent.orange.400"
+                }}
+              >
+                <Flex 
+                  bgGradient="linear(to-r, accent.orange.500, accent.orange.600)" 
+                  px={4} 
+                  py={2} 
+                  alignItems="center"
+                >
+                  <Icon as={MdMusicNote} color="white" mr={2} />
+                  <Text fontWeight="medium" color="white">Musical Key</Text>
                 </Flex>
                 
-                <Box 
-                  bg="rgba(25, 25, 35, 0.6)" 
-                  borderRadius="lg" 
-                  overflow="hidden"
-                  borderWidth="1px"
-                  borderColor="accent.orange.500"
+                {/* Current selection display */}
+                <Flex
+                  justifyContent="space-between"
+                  alignItems="center"
+                  px={4}
+                  py={3}
+                  borderBottomWidth="1px"
+                  borderColor="whiteAlpha.200"
                 >
-                  <Menu placement="bottom" isLazy>
-                    <MenuButton
-                      as={Button}
-                      rightIcon={<FaChevronRight transform="rotate(90deg)" />}
-                      bg="rgba(0,0,0,0.3)"
-                      color="white"
-                      _hover={{ bg: "blackAlpha.500" }}
-                      _active={{ bg: "blackAlpha.600" }}
-                      size="lg"
-                      width="full"
-                      px={6}
-                      py={6}
-                      fontWeight="normal"
-                      fontSize="lg"
-                      height="auto"
+                  <Text color="white" fontWeight="medium">
+                    {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "None selected"}
+                  </Text>
+                  
+                  {selectedTags.some(tag => SAMPLE_TAGS.key.includes(tag)) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      color="whiteAlpha.700"
+                      onClick={() => {
+                        const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                        setSelectedTags(newTags);
+                        setTimeout(() => refreshSamples(), 0);
+                      }}
+                      _hover={{ color: "white", bg: "whiteAlpha.100" }}
                     >
-                      {selectedTags.find(tag => SAMPLE_TAGS.key.includes(tag)) || "Select Key"}
-                    </MenuButton>
-                    <MenuList 
-                      bg="rgba(20, 20, 30, 0.95)"
-                      backdropFilter="blur(10px)"
-                      borderColor="whiteAlpha.200"
-                      boxShadow="0 8px 32px rgba(0, 0, 0, 0.4)"
-                      maxH="300px" 
-                      overflowY="auto"
-                    >
-                      <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold">Major Keys</Text>
-                      {SAMPLE_TAGS.key
-                        .filter(key => !key.includes('m'))
-                        .map(key => (
-                          <MenuItem 
-                            key={key} 
+                      Clear
+                    </Button>
+                  )}
+                </Flex>
+                
+                {/* Key selector grid */}
+                <Box p={3}>
+                  <Text color="orange.300" fontSize="sm" fontWeight="bold" mb={2}>Major Keys</Text>
+                  <SimpleGrid columns={4} spacing={1} mb={3}>
+                    {SAMPLE_TAGS.key
+                      .filter(key => !key.includes('m'))
+                      .map(key => {
+                        const isSelected = selectedTags.includes(key);
+                        return (
+                          <Button
+                            key={key}
+                            size="sm"
+                            variant={isSelected ? "solid" : "outline"}
+                            colorScheme="orange"
                             onClick={() => {
                               // Remove any previously selected key
                               const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key
-                              setSelectedTags([...newTags, key]);
+                              // Add the new key if not already selected, otherwise just remove it
+                              if (!isSelected) {
+                                newTags.push(key);
+                              }
+                              setSelectedTags(newTags);
                               setTimeout(() => refreshSamples(), 0);
                             }}
-                            bg="transparent"
-                            _hover={{ bg: "orange.700" }}
-                            color="white"
-                            transition="background 0.2s"
+                            fontWeight="medium"
+                            py={1}
+                            height="auto"
                           >
                             {key}
-                          </MenuItem>
-                        ))
-                      }
-                      <Text px={3} py={2} color="orange.300" fontSize="sm" fontWeight="bold" mt={2}>Minor Keys</Text>
-                      {SAMPLE_TAGS.key
-                        .filter(key => key.includes('m'))
-                        .map(key => (
-                          <MenuItem 
-                            key={key} 
+                          </Button>
+                        );
+                      })
+                    }
+                  </SimpleGrid>
+                  
+                  <Text color="orange.300" fontSize="sm" fontWeight="bold" mb={2}>Minor Keys</Text>
+                  <SimpleGrid columns={4} spacing={1}>
+                    {SAMPLE_TAGS.key
+                      .filter(key => key.includes('m'))
+                      .map(key => {
+                        const isSelected = selectedTags.includes(key);
+                        return (
+                          <Button
+                            key={key}
+                            size="sm"
+                            variant={isSelected ? "solid" : "outline"}
+                            colorScheme="orange"
                             onClick={() => {
                               // Remove any previously selected key
                               const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key
-                              setSelectedTags([...newTags, key]);
+                              // Add the new key if not already selected, otherwise just remove it
+                              if (!isSelected) {
+                                newTags.push(key);
+                              }
+                              setSelectedTags(newTags);
                               setTimeout(() => refreshSamples(), 0);
                             }}
-                            bg="transparent"
-                            _hover={{ bg: "orange.700" }}
-                            color="white"
-                            transition="background 0.2s"
+                            fontWeight="medium"
+                            py={1}
+                            height="auto"
                           >
                             {key}
-                          </MenuItem>
-                        ))
-                      }
-                      <Divider my={2} borderColor="whiteAlpha.300" />
-                      <MenuItem 
-                        bg="transparent"
-                        _hover={{ bg: "whiteAlpha.100" }}
-                        color="gray.300"
-                        onClick={() => {
-                          const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                          setSelectedTags(newTags);
-                          setTimeout(() => refreshSamples(), 0);
-                        }}
-                        transition="background 0.2s"
-                      >
-                        Clear Key Filter
-                      </MenuItem>
-                    </MenuList>
-                  </Menu>
+                          </Button>
+                        );
+                      })
+                    }
+                  </SimpleGrid>
                 </Box>
               </Box>
 

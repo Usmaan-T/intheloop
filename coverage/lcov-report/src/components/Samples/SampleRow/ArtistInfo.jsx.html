@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/9</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -93,17 +93,17 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">5x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -117,17 +117,17 @@ import { doc } from 'firebase/firestore';
 import { useDocument } from 'react-firebase-hooks/firestore';
 import { firestore } from '../../../firebase/firebase';
 &nbsp;
-const ArtistInfo = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span> userId }) =&gt; {</span>
-  const userDocRef = <span class="cstat-no" title="statement not covered" >doc(firestore, 'users', userId);</span>
-  const [userDoc, userLoading, userError] = <span class="cstat-no" title="statement not covered" >useDocument(userDocRef);</span>
-  const userData = <span class="cstat-no" title="statement not covered" >userDoc?.data();</span>
+const ArtistInfo = ({ userId }) =&gt; {
+  const userDocRef = doc(firestore, 'users', userId);
+  const [userDoc, userLoading, userError] = useDocument(userDocRef);
+  const userData = userDoc?.data();
 &nbsp;
-  let artistName = <span class="cstat-no" title="statement not covered" >'Unknown Artist';</span>
-<span class="cstat-no" title="statement not covered" >  if (userLoading) <span class="cstat-no" title="statement not covered" >artistName = 'Loading...';</span></span>
-  else <span class="cstat-no" title="statement not covered" >if (userError) <span class="cstat-no" title="statement not covered" >artistName = 'Error loading user';</span></span>
-  else <span class="cstat-no" title="statement not covered" >if (userData?.username) <span class="cstat-no" title="statement not covered" >artistName = userData.username;</span></span>
+  let artistName = 'Unknown Artist';
+  if (userLoading) artistName = 'Loading...';
+  else if (userError) artistName = 'Error loading user';
+  else if (userData?.username) artistName = userData.username;
   
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;Text fontSize="sm" color="gray.400" noOfLines={1}&gt;
       by {artistName}
     &lt;/Text&gt;
@@ -142,7 +142,7 @@ export default ArtistInfo;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T17:28:18.243Z
+                at 2025-05-07T21:14:38.007Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
