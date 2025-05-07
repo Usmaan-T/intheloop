@@ -5,6 +5,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth, storage, firestore } from '../firebase/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import useUserStreak from './useUserStreak';
 
 const useUploadFiles = () => {
   const [audioUpload, setAudioUpload] = useState(null);
@@ -17,19 +18,44 @@ const useUploadFiles = () => {
     bpm: '',
     tags: ''
   });
+  
+  // Add streak hook
+  const { updateStreakOnUpload } = useUserStreak(user?.uid);
 
   const uploadAudio = async () => {
+    // Reset error state
+    setUploadError('');
+    
+    // Validate file
     if (!audioUpload) {
       setUploadError('No audio selected.');
-      return;
+      return false;
     }
+    
+    // Validate user
     if (!user) {
       setUploadError('User is not authenticated.');
-      return;
+      return false;
+    }
+    
+    // Validate required fields before starting the upload
+    if (!inputs.name || !inputs.name.trim()) {
+      setUploadError('Please enter a track name.');
+      return false;
+    }
+    
+    if (!inputs.key || !inputs.key.trim()) {
+      setUploadError('Please select a musical key.');
+      return false;
+    }
+    
+    if (!inputs.bpm || !inputs.bpm.trim()) {
+      setUploadError('Please enter a BPM value.');
+      return false;
     }
 
+    // Start loading state
     setLoading(true);
-    setUploadError('');
 
     const storageRef = ref(storage, `audio/${audioUpload.name}_${uuidv4()}`);
     try {
@@ -38,10 +64,6 @@ const useUploadFiles = () => {
       // Get the download URL of the uploaded file
       const downloadURL = await getDownloadURL(snapshot.ref);
 
-    if (!inputs.name || !inputs.key || !inputs.bpm) {
-        setUploadError('Please fill in all fields.');
-        return;
-    }
       // Create a post object with additional fields
       const post = {
         userId: user.uid,
@@ -57,13 +79,39 @@ const useUploadFiles = () => {
 
       // Save the post object in Firestore under the "posts" collection
       await addDoc(collection(firestore, 'posts'), post);
+      
+      // Update the user's streak after successful upload
+      await updateStreakOnUpload();
+      
       console.log('Post saved successfully!');
+      return true;
     } catch (error) {
       console.error('Error uploading audio: ', error);
       setUploadError('Failed to upload audio. Please try again.');
+      return false;
     } finally {
       setLoading(false);
     }
+  };
+
+  const validateForm = () => {
+    if (!audioUpload) {
+      return { isValid: false, error: 'No audio selected.' };
+    }
+    
+    if (!inputs.name || !inputs.name.trim()) {
+      return { isValid: false, error: 'Please enter a track name.' };
+    }
+    
+    if (!inputs.key || !inputs.key.trim()) {
+      return { isValid: false, error: 'Please select a musical key.' };
+    }
+    
+    if (!inputs.bpm || !inputs.bpm.trim()) {
+      return { isValid: false, error: 'Please enter a BPM value.' };
+    }
+    
+    return { isValid: true, error: '' };
   };
 
   return {
@@ -73,7 +121,8 @@ const useUploadFiles = () => {
     uploadError,
     uploadAudio,
     setInputs,
-    inputs
+    inputs,
+    validateForm
   };
 }
 

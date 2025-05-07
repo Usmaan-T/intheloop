@@ -67,6 +67,7 @@ const UploadPage = () => {
     uploadAudio,
     setInputs,
     inputs,
+    validateForm
   } = useUploadFiles();
 
   const handleImageChange = (e) => {
@@ -94,11 +95,14 @@ const UploadPage = () => {
   };
 
   const handleUpload = async () => {
-    if (!audioUpload) {
+    // Use the validateForm function to check all fields before starting
+    const { isValid, error } = validateForm();
+    
+    if (!isValid) {
       toast({
-        title: "No file selected",
-        description: "Please select an audio file to upload",
-        status: "warning",
+        title: "Validation Error",
+        description: error,
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
@@ -118,19 +122,50 @@ const UploadPage = () => {
     }, 300);
 
     try {
-      await uploadAudio();
+      const uploadSuccess = await uploadAudio();
       clearInterval(progressInterval);
-      setUploadProgress(100);
-      toast({
-        title: "Upload successful!",
-        description: "Your audio file has been uploaded",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
+      
+      if (uploadSuccess) {
+        setUploadProgress(100);
+        toast({
+          title: "Upload successful!",
+          description: "Your audio file has been uploaded",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+        
+        // Reset form after successful upload
+        setInputs({
+          name: '',
+          key: '',
+          bpm: '',
+          tags: ''
+        });
+        setAudioUpload(null);
+        setSelectedTags([]);
+        setCoverImage(null);
+      } else {
+        // If upload returned false, there was an error
+        setUploadProgress(0);
+        toast({
+          title: "Upload Failed",
+          description: uploadError || "There was a problem uploading your file",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
       clearInterval(progressInterval);
       setUploadProgress(0);
+      toast({
+        title: "Upload Error",
+        description: "An unexpected error occurred",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
     }
   };
 

@@ -23,16 +23,18 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
-import CreatePlaylist from '../../components/playlist/CreatePlaylist';
+import CreatePlaylist from '../../components/Playlist/CreatePlaylist';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
 import PlaylistsSection from '../../components/Profile/PlaylistsSection';
 import TracksSection from '../../components/Profile/TracksSection';
 import ProfileHeader from '../../components/User/ProfileHeader';
+import StreakDisplay from '../../components/Profile/StreakDisplay';
 import useProfileData from '../../hooks/useProfileData';
 import useUserTracks from '../../hooks/useUserTracks';
 import useUserPlaylists from '../../hooks/useUserPlaylists';
 import useUserPopularity from '../../hooks/useUserPopularity';
 import useUserLikes from '../../hooks/useUserLikes';
+import useUserStreak from '../../hooks/useUserStreak';
 
 const ProfilePage = () => {
   // Auth state
@@ -41,6 +43,9 @@ const ProfilePage = () => {
   // Custom hooks
   const { profileData, isLoading: profileLoading, isUpdating, updateProfileData } = useProfileData(user);
   const { tracks, isLoading: tracksLoading, error: tracksError } = useUserTracks(user?.uid);
+  
+  // Add streaks hook
+  const { streakData, loading: streakLoading, resetDailyStreak } = useUserStreak(user?.uid);
   
   // Add a refreshTrigger state to force refresh after playlist creation
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -77,6 +82,13 @@ const ProfilePage = () => {
       });
     }
   }, [user, profileData, tracks, playlists, likedSamples]);
+  
+  // Reset streak flag when component mounts
+  useEffect(() => {
+    if (user?.uid) {
+      resetDailyStreak();
+    }
+  }, [user, resetDailyStreak]);
   
   // Handlers
   const handleEditClick = () => {
@@ -141,155 +153,334 @@ const ProfilePage = () => {
   return (
     <>
       <NavBar />
-      <Box bgColor="blackAlpha.900" minH="calc(100vh - 80px)">
-        {/* Profile Header using the shared ProfileHeader component */}
-        <ProfileHeader 
-          user={userProfileData} 
-          stats={userStats}
-          showFollowButton={false}
-          currentUser={user}
-        >
-          <Button mt={4} colorScheme="red" size="md" onClick={handleEditClick}>
-            Edit Profile
-          </Button>
-        </ProfileHeader>
+      <Box 
+        bgColor={'blackAlpha.900'} 
+        minH="100vh" 
+        backgroundSize="cover"
+        position="relative"
+        py={8}
+        overflow="hidden"
+        backgroundImage="radial-gradient(circle at 10% 10%, rgba(54, 16, 74, 0.2) 0%, transparent 40%), radial-gradient(circle at 80% 80%, rgba(90, 16, 54, 0.2) 0%, transparent 40%)"
+      >
+        {/* Decorative elements */}
+        <Box
+          position="absolute"
+          top="-200px"
+          left="-200px"
+          width="500px"
+          height="500px"
+          bg="purple.900"
+          filter="blur(120px)"
+          opacity="0.1"
+          borderRadius="full"
+          zIndex="0"
+        />
         
-        {/* Profile Content - Using Tabs like UserProfilePage */}
-        <Container maxW="container.xl" py={10} px={{ base: 4, lg: 8 }}>
-          <Tabs colorScheme="red" variant="line">
-            <TabList borderBottomColor="whiteAlpha.200">
-              <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Samples</Tab>
-              <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Playlists</Tab>
-              <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Likes</Tab>
-            </TabList>
-            
-            <TabPanels>
-              {/* Samples Tab */}
-              <TabPanel px={0}>
-                <Flex justify="flex-end" mb={4}>
-                  <Button 
-                    as="a" 
-                    href="/upload" 
-                    colorScheme="red" 
-                    size="sm"
-                  >
-                    Upload Sample
-                  </Button>
-                </Flex>
-                
-                <Box
-                  bg="rgba(20, 20, 30, 0.8)"
-                  borderRadius="lg"
-                  p={{ base: 5, md: 8 }}
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
+        <Box
+          position="absolute"
+          bottom="-100px"
+          right="-200px"
+          width="400px"
+          height="400px"
+          bg="red.900"
+          filter="blur(100px)"
+          opacity="0.08"
+          borderRadius="full"
+          zIndex="0"
+        />
+        
+        <Container maxW="container.xl" px={{ base: 4, md: 6, lg: 8 }} position="relative" zIndex="1">
+          {/* Profile Header */}
+          <Box mb={8}>
+            <ProfileHeader 
+              user={userProfileData}
+              stats={userStats}
+              showFollowButton={false}
+              currentUser={user}
+              popularityScore={popularityScore}
+              onEditClick={handleEditClick}
+              loading={profileLoading || userLoading}
+            />
+          </Box>
+          
+          {/* Streak Display */}
+          <Box mb={8}>
+            <StreakDisplay 
+              streakData={streakData}
+              isLoading={streakLoading}
+            />
+          </Box>
+          
+          {/* Tabs Content */}
+          <Box>
+            <Tabs variant="soft-rounded" colorScheme="purple">
+              <TabList borderBottom="1px solid" borderColor="whiteAlpha.200" pb={4} mb={6}>
+                <Tab 
+                  color="gray.300" 
+                  _selected={{ color: "white", bg: "purple.500" }}
+                  py={3}
+                  px={6}
+                  mr={2}
                 >
-                  {tracksLoading ? (
-                    <Flex justify="center" py={10}>
-                      <Spinner size="xl" color="red.500" thickness="4px" />
-                    </Flex>
-                  ) : tracksError ? (
-                    <Text color="red.300" textAlign="center">Error loading your samples</Text>
-                  ) : tracks && tracks.length > 0 ? (
-                    <TracksSection 
-                      tracks={tracks}
-                      isLoading={false}
-                      error={null}
-                      showHeader={false}
-                    />
-                  ) : (
-                    <Text color="gray.400" textAlign="center">No samples uploaded yet</Text>
-                  )}
-                </Box>
-              </TabPanel>
+                  Samples
+                </Tab>
+                <Tab 
+                  color="gray.300" 
+                  _selected={{ color: "white", bg: "purple.500" }}
+                  py={3}
+                  px={6}
+                  mr={2}
+                >
+                  Playlists
+                </Tab>
+                <Tab 
+                  color="gray.300" 
+                  _selected={{ color: "white", bg: "purple.500" }}
+                  py={3}
+                  px={6}
+                >
+                  Liked
+                </Tab>
+              </TabList>
               
-              {/* Playlists Tab */}
-              <TabPanel px={0}>
-                <Flex justify="flex-end" mb={4}>
-                  <Button 
-                    onClick={playlistDisclosure.onOpen} 
-                    colorScheme="red" 
-                    size="sm"
+              <TabPanels>
+                {/* Samples Tab */}
+                <TabPanel px={0}>
+                  <Flex justify="flex-end" mb={6}>
+                    <Button 
+                      as="a" 
+                      href="/upload" 
+                      colorScheme="purple" 
+                      size="md"
+                      px={6}
+                      py={5}
+                      borderRadius="md"
+                      _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                      transition="all 0.2s"
+                    >
+                      Upload Sample
+                    </Button>
+                  </Flex>
+                  
+                  <Box
+                    bg="rgba(20, 20, 30, 0.8)"
+                    borderRadius="xl"
+                    p={{ base: 6, md: 8 }}
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    boxShadow="0 4px 20px rgba(0, 0, 0, 0.2)"
+                    position="relative"
+                    overflow="hidden"
                   >
-                    Create Playlist
-                  </Button>
-                </Flex>
+                    {/* Add decorative elements */}
+                    <Box
+                      position="absolute"
+                      top="-100px"
+                      right="-80px"
+                      width="200px"
+                      height="200px"
+                      bg="purple.900"
+                      opacity="0.1"
+                      borderRadius="full"
+                      zIndex="0"
+                    />
+                    
+                    <Box position="relative" zIndex="1">
+                      {tracksLoading ? (
+                        <Flex justify="center" py={10}>
+                          <Spinner size="xl" color="purple.500" thickness="4px" />
+                        </Flex>
+                      ) : tracksError ? (
+                        <Text color="red.300" textAlign="center" fontSize="lg">
+                          Error loading your samples
+                        </Text>
+                      ) : tracks && tracks.length > 0 ? (
+                        <TracksSection 
+                          tracks={tracks}
+                          isLoading={false}
+                          error={null}
+                          showHeader={false}
+                        />
+                      ) : (
+                        <Flex 
+                          direction="column" 
+                          align="center" 
+                          justify="center" 
+                          py={10}
+                          textAlign="center"
+                        >
+                          <Text color="gray.400" fontSize="lg" mb={4}>
+                            No samples uploaded yet
+                          </Text>
+                          <Text color="gray.600" maxW="400px">
+                            Start uploading your samples to build your streak and share your sounds with the world.
+                          </Text>
+                        </Flex>
+                      )}
+                    </Box>
+                  </Box>
+                </TabPanel>
                 
-                <Box
-                  bg="rgba(20, 20, 30, 0.8)"
-                  borderRadius="lg"
-                  p={{ base: 5, md: 8 }}
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                >
-                  {playlistsLoading ? (
-                    <Flex justify="center" py={10}>
-                      <Spinner size="xl" color="red.500" thickness="4px" />
-                    </Flex>
-                  ) : playlistsError ? (
-                    <Text color="red.300" textAlign="center">Error loading your playlists</Text>
-                  ) : playlists && playlists.length > 0 ? (
-                    <PlaylistsSection 
-                      playlists={playlists}
-                      isLoading={false}
-                      error={null}
-                      onAddClick={null}
-                      showHeader={false}
+                {/* Playlists Tab */}
+                <TabPanel px={0}>
+                  <Flex justify="flex-end" mb={6}>
+                    <Button 
+                      onClick={playlistDisclosure.onOpen} 
+                      colorScheme="purple" 
+                      size="md"
+                      px={6}
+                      py={5}
+                      borderRadius="md"
+                      _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
+                      transition="all 0.2s"
+                    >
+                      Create Playlist
+                    </Button>
+                  </Flex>
+                  
+                  <Box
+                    bg="rgba(20, 20, 30, 0.8)"
+                    borderRadius="xl"
+                    p={{ base: 6, md: 8 }}
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    boxShadow="0 4px 20px rgba(0, 0, 0, 0.2)"
+                    position="relative"
+                    overflow="hidden"
+                  >
+                    {/* Add decorative elements */}
+                    <Box
+                      position="absolute"
+                      bottom="-100px"
+                      left="-80px"
+                      width="200px"
+                      height="200px"
+                      bg="green.900"
+                      opacity="0.1"
+                      borderRadius="full"
+                      zIndex="0"
                     />
-                  ) : (
-                    <Text color="gray.400" textAlign="center">No playlists yet</Text>
-                  )}
-                </Box>
-              </TabPanel>
-              
-              {/* Likes Tab */}
-              <TabPanel px={0}>
-                <Box
-                  bg="rgba(20, 20, 30, 0.8)"
-                  borderRadius="lg"
-                  p={{ base: 5, md: 8 }}
-                  border="1px solid"
-                  borderColor="whiteAlpha.200"
-                >
-                  {likesLoading ? (
-                    <Flex justify="center" py={10}>
-                      <Spinner size="xl" color="red.500" thickness="4px" />
-                    </Flex>
-                  ) : likesError ? (
-                    <Text color="red.300" textAlign="center">Error loading your liked samples</Text>
-                  ) : likedSamples && likedSamples.length > 0 ? (
-                    <TracksSection 
-                      tracks={likedSamples}
-                      isLoading={false}
-                      error={null}
-                      showHeader={false}
+                    
+                    <Box position="relative" zIndex="1">
+                      {playlistsLoading ? (
+                        <Flex justify="center" py={10}>
+                          <Spinner size="xl" color="purple.500" thickness="4px" />
+                        </Flex>
+                      ) : playlistsError ? (
+                        <Text color="red.300" textAlign="center" fontSize="lg">
+                          Error loading your playlists
+                        </Text>
+                      ) : playlists && playlists.length > 0 ? (
+                        <PlaylistsSection 
+                          playlists={playlists}
+                          isLoading={false}
+                          error={null}
+                          onAddClick={null}
+                          showHeader={false}
+                        />
+                      ) : (
+                        <Flex 
+                          direction="column" 
+                          align="center" 
+                          justify="center" 
+                          py={10}
+                          textAlign="center"
+                        >
+                          <Text color="gray.400" fontSize="lg" mb={4}>
+                            No playlists yet
+                          </Text>
+                          <Text color="gray.600" maxW="400px">
+                            Create your first playlist to organize your favorite samples and share them with others.
+                          </Text>
+                        </Flex>
+                      )}
+                    </Box>
+                  </Box>
+                </TabPanel>
+                
+                {/* Likes Tab */}
+                <TabPanel px={0}>
+                  <Box
+                    bg="rgba(20, 20, 30, 0.8)"
+                    borderRadius="xl"
+                    p={{ base: 6, md: 8 }}
+                    border="1px solid"
+                    borderColor="whiteAlpha.300"
+                    boxShadow="0 4px 20px rgba(0, 0, 0, 0.2)"
+                    position="relative"
+                    overflow="hidden"
+                    minH="300px"
+                  >
+                    {/* Add decorative elements */}
+                    <Box
+                      position="absolute"
+                      top="-80px"
+                      right="-60px"
+                      width="180px"
+                      height="180px"
+                      bg="red.900"
+                      opacity="0.1"
+                      borderRadius="full"
+                      zIndex="0"
                     />
-                  ) : (
-                    <Text color="gray.400" textAlign="center">No liked samples yet</Text>
-                  )}
-                </Box>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
+                    
+                    <Box position="relative" zIndex="1">
+                      {likesLoading ? (
+                        <Flex justify="center" py={10}>
+                          <Spinner size="xl" color="purple.500" thickness="4px" />
+                        </Flex>
+                      ) : likesError ? (
+                        <Text color="red.300" textAlign="center" fontSize="lg">
+                          Error loading your liked samples
+                        </Text>
+                      ) : likedSamples && likedSamples.length > 0 ? (
+                        <TracksSection 
+                          tracks={likedSamples}
+                          isLoading={false}
+                          error={null}
+                          showHeader={false}
+                        />
+                      ) : (
+                        <Flex 
+                          direction="column" 
+                          align="center" 
+                          justify="center" 
+                          py={10}
+                          textAlign="center"
+                        >
+                          <Text color="gray.400" fontSize="lg" mb={4}>
+                            No liked samples yet
+                          </Text>
+                          <Text color="gray.600" maxW="400px">
+                            Explore and like samples to build your collection of favorites.
+                          </Text>
+                        </Flex>
+                      )}
+                    </Box>
+                  </Box>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </Box>
         </Container>
+        
+        {/* Edit Profile Modal */}
+        <EditProfileModal 
+          isOpen={profileDisclosure.isOpen}
+          onClose={profileDisclosure.onClose}
+          initialData={profileData}
+          user={user}
+          onSave={handleSaveProfile}
+          isUpdating={isUpdating}
+        />
+        
+        {/* Create Playlist Modal */}
+        <CreatePlaylist 
+          isOpen={playlistDisclosure.isOpen}
+          onClose={playlistDisclosure.onClose}
+          onSuccess={handlePlaylistCreated}
+        />
       </Box>
-      
-      {/* Modals */}
-      <EditProfileModal 
-        isOpen={profileDisclosure.isOpen}
-        onClose={profileDisclosure.onClose}
-        initialData={profileData}
-        user={user}
-        onSave={handleSaveProfile}
-        isUpdating={isUpdating}
-      />
-      
-      <CreatePlaylist
-        isOpen={playlistDisclosure.isOpen}
-        onClose={playlistDisclosure.onClose}
-        onSuccess={handlePlaylistCreated}
-      />
-      
       <Footer />
     </>
   );
