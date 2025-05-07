@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useSignUpWithEmailAndPassword from "../../hooks/useSignUpWithEmailAndPassword";
-import { FaGoogle, FaApple, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
+import useSignInWithGoogle from "../../hooks/useSignInWithGoogle";
+import { FaGoogle, FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { Navigate, useNavigate } from "react-router-dom";
 
@@ -35,10 +36,19 @@ const SignUp = () => {
     password: "",
     username: ""
   });
-  const { loading, error, signup, user, success } = useSignUpWithEmailAndPassword();
+  const { loading: emailLoading, error: emailError, signup, user: emailUser, success: emailSuccess } = useSignUpWithEmailAndPassword();
+  const { loading: googleLoading, error: googleError, signInWithGoogle, user: googleUser, success: googleSuccess } = useSignInWithGoogle();
   const { isOpen, onToggle } = useDisclosure();
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Loading state combines both authentication methods
+  const loading = emailLoading || googleLoading;
+  // Error state combines both authentication methods
+  const error = emailError || googleError;
+  // Success and user from either method
+  const success = emailSuccess || googleSuccess;
+  const user = emailUser || googleUser;
 
   // Handle redirect after successful signup
   useEffect(() => {
@@ -124,31 +134,13 @@ const SignUp = () => {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           transition={{ duration: 0.2 }}
+          onClick={signInWithGoogle}
+          isLoading={googleLoading}
         >
           Continue with Google
         </MotionButton>
       </motion.div>
       
-      <motion.div variants={itemVariants}>
-        <MotionButton 
-          leftIcon={<Icon as={FaApple} boxSize={5} />} 
-          variant="outline" 
-          borderColor="whiteAlpha.300"
-          color="white"
-          _hover={{ bg: "whiteAlpha.200", borderColor: "red.400" }}
-          _active={{ bg: "whiteAlpha.300" }}
-          py={6}
-          fontSize="md"
-          size="lg"
-          w="100%"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2 }}
-        >
-          Continue with Apple
-        </MotionButton>
-      </motion.div>
-
       {/* Divider with "or" */}
       <motion.div variants={itemVariants}>
         <Flex align="center" my={2}>
@@ -255,8 +247,10 @@ const SignUp = () => {
             bg="rgba(229, 62, 62, 0.1)" 
             borderRadius="md"
             mb={4}
+            borderWidth="1px"
+            borderColor="red.300"
           >
-            {error}
+            {typeof error === 'string' ? error : 'An error occurred during signup. Please try again.'}
           </Box>
         </motion.div>
       )}
@@ -265,7 +259,7 @@ const SignUp = () => {
         <MotionButton
           width="100%"
           colorScheme="red"
-          isLoading={loading}
+          isLoading={emailLoading}
           onClick={() => signup(inputs)}
           height="48px"
           fontSize="md"
