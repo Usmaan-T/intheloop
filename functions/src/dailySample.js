@@ -21,7 +21,7 @@ exports.updateDailySample = functions.pubsub.schedule('0 0 * * *') // Run at mid
       endDate.setHours(23, 59, 59, 999);
       
       // Query samples from 2 days ago
-      const samplesRef = db.collection('samples');
+      const samplesRef = db.collection('posts');
       const samplesSnapshot = await samplesRef
         .where('createdAt', '>=', twoDaysAgo)
         .where('createdAt', '<=', endDate)

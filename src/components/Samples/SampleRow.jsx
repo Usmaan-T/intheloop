@@ -16,8 +16,21 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  List,
+  ListItem,
+  VStack,
+  Image,
+  Spinner,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
+import { MdMusicNote } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
@@ -25,8 +38,11 @@ import useAudioPlayback from '../../hooks/useAudioPlayback';
 import useDownloadTrack from '../../hooks/useDownloadTrack';
 import useTrackSampleView from '../../hooks/useTrackSampleView';
 import useDeleteSample from '../../hooks/useDeleteSample';
+import useUserPlaylists from '../../hooks/useUserPlaylists';
+import usePlaylistData from '../../hooks/usePlaylistData';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 import ArtistInfo from './SampleRow/ArtistInfo';
 import SampleCover from './SampleRow/SampleCover';
 import TagsList from './SampleRow/TagsList';
@@ -36,6 +52,7 @@ const MotionFlex = motion(Flex);
 const MotionIconButton = motion(IconButton);
 
 const SampleRow = ({ track, onDelete }) => {
+  const navigate = useNavigate();
   // Use our custom hooks for audio playback and download
   const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
   const { downloadTrack, downloadLoading } = useDownloadTrack();
@@ -44,8 +61,15 @@ const SampleRow = ({ track, onDelete }) => {
   const [user] = useAuthState(auth);
   
   // For delete confirmation dialog
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDeleteDialogOpen, onOpen: onOpenDeleteDialog, onClose: onCloseDeleteDialog } = useDisclosure();
   const cancelRef = React.useRef();
+  
+  // For playlist modal
+  const { isOpen: isPlaylistModalOpen, onOpen: onOpenPlaylistModal, onClose: onClosePlaylistModal } = useDisclosure();
+  
+  // For playlists functionality
+  const { playlists, isLoading: playlistsLoading } = useUserPlaylists(user?.uid);
+  const { addToPlaylist, isAdding } = usePlaylistData();
   
   // Track when this sample is viewed
   useTrackSampleView(track.id);
@@ -71,7 +95,44 @@ const SampleRow = ({ track, onDelete }) => {
       onDelete(track.id);
     }
     
-    onClose();
+    onCloseDeleteDialog();
+  };
+  
+  // Handle adding to playlist
+  const handleAddToPlaylist = async (playlist) => {
+    try {
+      // Make sure track has required fields
+      if (!track || !track.id || !track.audioUrl) {
+        console.error("Invalid track data:", track);
+        return;
+      }
+      
+      // Create a track object with essential properties
+      const trackToAdd = {
+        id: track.id,
+        name: track.name || 'Untitled Track',
+        audioUrl: track.audioUrl,
+        // Include optional fields only if they exist
+        ...(track.imageUrl ? { coverImage: track.imageUrl } : {}),
+        ...(track.key ? { key: track.key } : {}),
+        ...(track.bpm ? { bpm: track.bpm } : {}),
+        // Include tags with a fallback to empty array
+        tags: Array.isArray(track.tags) ? [...track.tags] : [],
+        // Metadata
+        userId: track.userId,
+        addedBy: user?.uid,
+        addedAt: new Date()
+      };
+      
+      // Add the track using the hook
+      const success = await addToPlaylist(trackToAdd, playlist);
+      
+      if (success) {
+        onClosePlaylistModal();
+      }
+    } catch (error) {
+      console.error("Error in handleAddToPlaylist:", error);
+    }
   };
   
   return (
@@ -198,6 +259,7 @@ const SampleRow = ({ track, onDelete }) => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 transition="all 0.2s"
+                color={isLiked ? undefined : "white"}
               />
             </Tooltip>
             
@@ -213,6 +275,8 @@ const SampleRow = ({ track, onDelete }) => {
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                 whileTap={{ scale: 0.95 }}
                 transition="all 0.2s"
+                color="white"
+                onClick={onOpenPlaylistModal}
               />
             </Tooltip>
             
@@ -230,6 +294,7 @@ const SampleRow = ({ track, onDelete }) => {
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                 whileTap={{ scale: 0.95 }}
                 transition="all 0.2s"
+                color="white"
               />
             </Tooltip>
             
@@ -243,14 +308,39 @@ const SampleRow = ({ track, onDelete }) => {
                   isRound
                   colorScheme="red"
                   variant="ghost"
-                  onClick={onOpen}
+                  onClick={onOpenDeleteDialog}
                   isLoading={isDeleting}
                   whileHover={{ scale: 1.1, backgroundColor: "rgba(229, 62, 62, 0.2)" }}
                   whileTap={{ scale: 0.95 }}
                   transition="all 0.2s"
+                  color="red.400"
                 />
               </Tooltip>
             )}
+          </HStack>
+
+          {/* Stats indicators - Views, Downloads, Likes */}
+          <HStack spacing={4} color="white">
+            <Tooltip label={`${viewCount} ${viewCount === 1 ? 'view' : 'views'}`}>
+              <Flex align="center">
+                <Icon as={FaEye} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{viewCount}</Text>
+              </Flex>
+            </Tooltip>
+            
+            <Tooltip label={`${downloadCount} ${downloadCount === 1 ? 'download' : 'downloads'}`}>
+              <Flex align="center">
+                <Icon as={FaDownload} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{downloadCount}</Text>
+              </Flex>
+            </Tooltip>
+            
+            <Tooltip label={`${likeCount} ${likeCount === 1 ? 'like' : 'likes'}`}>
+              <Flex align="center">
+                <Icon as={FaHeart} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{likeCount}</Text>
+              </Flex>
+            </Tooltip>
           </HStack>
         </Flex>
       </Flex>
@@ -258,26 +348,7 @@ const SampleRow = ({ track, onDelete }) => {
       {/* Add popularity metrics display */}
       <Flex px={4} pb={2} justifyContent="flex-end" color="gray.400" fontSize="xs">
         <HStack spacing={4}>
-          <Tooltip label="Views">
-            <HStack spacing={1}>
-              <Icon as={FaEye} />
-              <Text>{viewCount}</Text>
-            </HStack>
-          </Tooltip>
-          
-          <Tooltip label="Downloads">
-            <HStack spacing={1}>
-              <Icon as={FaDownload} />
-              <Text>{downloadCount}</Text>
-            </HStack>
-          </Tooltip>
-          
-          <Tooltip label="Likes">
-            <HStack spacing={1}>
-              <Icon as={FaHeart} color="brand.400" />
-              <Text>{likeCount}</Text>
-            </HStack>
-          </Tooltip>
+
 
           {track.popularityScores && (
             <Tooltip label="Popularity Score">
@@ -299,7 +370,7 @@ const SampleRow = ({ track, onDelete }) => {
                     borderRadius="full"
                     px={2}
                   >
-                    +{Math.round(track.popularityScores.daily)}
+                    +{Math.round(track.popularityScores.weekly)}
                   </Badge>
                 )}
               </HStack>
@@ -320,7 +391,7 @@ const SampleRow = ({ track, onDelete }) => {
         <Waveform 
           audioUrl={track.audioUrl} 
           options={{
-            waveColor: 'rgba(255, 255, 255, 0.4)',
+            waveColor: 'rgb(255, 255, 255)',
             progressColor: isLiked ? 'rgba(229, 62, 62, 0.8)' : 'rgba(255, 255, 255, 0.8)',
             cursorColor: 'rgba(229, 62, 62, 0.8)',
             barWidth: 2,
@@ -338,9 +409,9 @@ const SampleRow = ({ track, onDelete }) => {
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog
-        isOpen={isOpen}
+        isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}
-        onClose={onClose}
+        onClose={onCloseDeleteDialog}
       >
         <AlertDialogOverlay>
           <AlertDialogContent 
@@ -361,7 +432,7 @@ const SampleRow = ({ track, onDelete }) => {
             <AlertDialogFooter>
               <Button 
                 ref={cancelRef} 
-                onClick={onClose} 
+                onClick={onCloseDeleteDialog} 
                 variant="outline"
                 _hover={{ bg: "whiteAlpha.100" }}
                 _active={{ bg: "whiteAlpha.200" }}
@@ -384,6 +455,90 @@ const SampleRow = ({ track, onDelete }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
+      
+      {/* Playlist modal */}
+      <Modal isOpen={isPlaylistModalOpen} onClose={onClosePlaylistModal} size="md">
+        <ModalOverlay backdropFilter="blur(10px)" />
+        <ModalContent bg="rgba(20, 20, 30, 0.95)" color="white" borderColor="whiteAlpha.200" borderWidth="1px">
+          <ModalHeader fontSize="xl" fontWeight="bold">Add to Playlist</ModalHeader>
+          <ModalCloseButton color="white" />
+          <ModalBody pb={6}>
+            {playlistsLoading ? (
+              <Flex justify="center" py={4}>
+                <Spinner color="red.500" />
+              </Flex>
+            ) : playlists && playlists.length > 0 ? (
+              <List spacing={3}>
+                {playlists.map(playlist => (
+                  <ListItem key={playlist.id}>
+                    <Button
+                      variant="ghost"
+                      justifyContent="flex-start"
+                      width="100%"
+                      py={2}
+                      px={3}
+                      onClick={() => handleAddToPlaylist(playlist)}
+                      isLoading={isAdding}
+                      _hover={{ bg: "whiteAlpha.200" }}
+                      color="white"
+                    >
+                      <HStack spacing={3} width="100%">
+                        <Box
+                          width="40px"
+                          height="40px"
+                          borderRadius="md"
+                          bg={playlist.coverImage ? "transparent" : "red.500"}
+                          overflow="hidden"
+                        >
+                          {playlist.coverImage ? (
+                            <Image 
+                              src={playlist.coverImage} 
+                              alt={playlist.name} 
+                              width="100%" 
+                              height="100%" 
+                              objectFit="cover"
+                            />
+                          ) : (
+                            <Flex
+                              width="100%"
+                              height="100%"
+                              justifyContent="center"
+                              alignItems="center"
+                            >
+                              <Icon as={MdMusicNote} color="white" boxSize={6} />
+                            </Flex>
+                          )}
+                        </Box>
+                        <VStack align="start" spacing={0} flex={1}>
+                          <Text fontWeight="medium" color="white">{playlist.name}</Text>
+                          <Text fontSize="xs" color="gray.300">
+                            {playlist.tracks?.length || 0} tracks
+                          </Text>
+                        </VStack>
+                      </HStack>
+                    </Button>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <VStack spacing={3} py={4}>
+                <Text color="white">You don't have any playlists yet</Text>
+                <Button colorScheme="red" size="sm" onClick={() => {
+                  onClosePlaylistModal();
+                  navigate('/createplaylist');
+                }}>
+                  Create Playlist
+                </Button>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" colorScheme="red" onClick={onClosePlaylistModal}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </MotionBox>
   );
 };
