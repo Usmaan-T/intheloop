@@ -30,8 +30,8 @@ Object.defineProperty(window, 'localStorage', {
   writable: true,
 });
 
-// Mock console.log
-console.log = jest.fn();
+// Mock console.error instead of console.log
+console.error = jest.fn();
 
 describe('useSignUpWithEmailAndPassword', () => {
   beforeEach(() => {
@@ -156,8 +156,8 @@ describe('useSignUpWithEmailAndPassword', () => {
       });
     });
 
-    // Verify error message logged
-    expect(console.log).toHaveBeenCalledWith('Please fill in all fields');
+    // Verify error message is set in the result instead of checking console.log
+    expect(result.current.error).toBe('Please fill in all fields');
 
     // Verify that createUserWithEmailAndPassword was not called
     expect(mockCreateUserFn).not.toHaveBeenCalled();
@@ -175,6 +175,7 @@ describe('useSignUpWithEmailAndPassword', () => {
   it('should handle signup error from Firebase auth', async () => {
     // Mock Firebase auth error
     const mockError = new Error('Email already in use');
+    mockError.code = 'auth/email-already-in-use'; // Add error code for proper mapping
     
     // Mock user creation function to throw error
     const mockCreateUserFn = jest.fn().mockRejectedValue(mockError);
@@ -200,8 +201,8 @@ describe('useSignUpWithEmailAndPassword', () => {
     // Verify that createUserWithEmailAndPassword was called
     expect(mockCreateUserFn).toHaveBeenCalled();
 
-    // Verify error was logged
-    expect(console.log).toHaveBeenCalledWith(mockError);
+    // Verify error message is set in the result instead of checking console.log
+    expect(result.current.error).toBe('This email is already in use');
 
     // Verify that doc and setDoc were not called
     expect(doc).not.toHaveBeenCalled();
@@ -255,8 +256,8 @@ describe('useSignUpWithEmailAndPassword', () => {
     // Verify that setDoc was called but failed
     expect(setDoc).toHaveBeenCalled();
 
-    // Verify Firestore error was logged
-    expect(console.log).toHaveBeenCalledWith(firestoreError);
+    // Verify error message is set in the result instead of checking console.log
+    expect(result.current.error).toBe('Firestore write failed');
 
     // Verify localStorage was not updated due to error
     expect(mockSetItem).not.toHaveBeenCalled();
@@ -286,7 +287,7 @@ describe('useSignUpWithEmailAndPassword', () => {
     expect(result.current).toHaveProperty('signup');
     expect(result.current).toHaveProperty('user', mockUser);
     expect(result.current).toHaveProperty('loading', mockLoading);
-    expect(result.current).toHaveProperty('error', mockError);
+    expect(result.current.error).toBeUndefined();
     expect(result.current).toHaveProperty('success');
   });
 }); 
