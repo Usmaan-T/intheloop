@@ -84,6 +84,14 @@ const useSamplesData = (pageSize = 10, initialSearchTerm = '', initialTags = [],
       setError(null);
       setNoResultsReason('');
       
+      console.log("Starting fetchSamples with params:", {
+        isInitial,
+        searchTerm,
+        selectedTags,
+        sortBy,
+        lastVisible: lastVisible ? 'exists' : 'null'
+      });
+      
       // If this is not for pagination (either initial load or filter change),
       // clear samples and lastVisible
       if (isInitial || haveFiltersChanged()) {
@@ -122,199 +130,238 @@ const useSamplesData = (pageSize = 10, initialSearchTerm = '', initialTags = [],
       // Set a large batch size for client-side filtering
       const batchSize = useClientSideFiltering ? pageSize * 30 : pageSize * 2;
 
-      // Basic query without tag filtering
-      if (lastVisible) {
-        samplesQuery = query(
-          samplesRef,
-          orderBy(sortField, sortDirection),
-          startAfter(lastVisible),
-          limit(batchSize)
-        );
-      } else {
-        samplesQuery = query(
-          samplesRef,
-          orderBy(sortField, sortDirection),
-          limit(batchSize)
-        );
-      }
+      // Log the query we're about to execute
+      console.log("Building Firestore query:", {
+        sortField,
+        sortDirection,
+        batchSize,
+        useClientSideFiltering
+      });
 
-      // Execute the query
-      let samplesSnapshot;
+      // Try-catch around the specific query building and execution
       try {
-        samplesSnapshot = await getDocs(samplesQuery);
-      } catch (error) {
-        console.error('Error fetching samples with sortBy:', sortBy, 'Error:', error);
-        
-        // If the query fails (likely due to missing field), try again with createdAt as fallback
-        if (sortField !== 'createdAt') {
-          console.log('Falling back to createdAt sort');
-          if (lastVisible) {
-            samplesQuery = query(
-              samplesRef,
-              orderBy('createdAt', 'desc'),
-              startAfter(lastVisible),
-              limit(batchSize)
-            );
-          } else {
-            samplesQuery = query(
-              samplesRef,
-              orderBy('createdAt', 'desc'),
-              limit(batchSize)
-            );
-          }
-          samplesSnapshot = await getDocs(samplesQuery);
-        } else {
-          throw error; // Re-throw if we're already using createdAt
-        }
-      }
-      
-      // Check if we have results
-      if (samplesSnapshot.empty) {
-        if (selectedTags.length > 0) {
-          setNoResultsReason(`No samples found containing all selected tags: ${selectedTags.join(', ')}`);
-        } else if (searchTerm) {
-          setNoResultsReason(`No samples found matching search term: "${searchTerm}"`);
-        } else {
-          setNoResultsReason('No samples available');
-        }
-        
-        setHasMore(false);
-        setLoading(false);
-        return;
-      }
-
-      // Process the results
-      let fetchedSamples = samplesSnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        // Ensure tags exist as an array
-        tags: doc.data().tags || []
-      }));
-
-      console.log(`Fetched ${fetchedSamples.length} samples before filtering`);
-
-      // If we're sorting by popularity and some samples don't have popularityScores, 
-      // make sure we sort them correctly by adding fallback values
-      if ((sortBy === 'popular' || sortBy === 'trending') && fetchedSamples.length > 0) {
-        fetchedSamples = fetchedSamples.map(sample => {
-          if (!sample.popularityScores) {
-            // Calculate a basic score based on likes
-            const likes = sample.likes || 0;
-            const score = likes * 5; // Basic calculation
-            
-            return {
-              ...sample,
-              popularityScores: {
-                daily: 0,
-                weekly: 0,
-                monthly: 0,
-                allTime: score
-              }
-            };
-          }
-          return sample;
-        });
-        
-        // Sort manually if we're using a fallback
-        if (sortField === 'popularityScores.allTime') {
-          fetchedSamples.sort((a, b) => {
-            const scoreA = a.popularityScores?.allTime || 0;
-            const scoreB = b.popularityScores?.allTime || 0;
-            return scoreB - scoreA; // Descending order
-          });
-        } else if (sortField === 'popularityScores.weekly') {
-          fetchedSamples.sort((a, b) => {
-            const scoreA = a.popularityScores?.weekly || 0;
-            const scoreB = b.popularityScores?.weekly || 0;
-            return scoreB - scoreA; // Descending order
-          });
-        }
-      }
-
-      // For search term, filter in client
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const beforeCount = fetchedSamples.length;
-        
-        fetchedSamples = fetchedSamples.filter(sample => {
-          return (
-            (sample.name?.toLowerCase() || '').includes(searchLower) ||
-            (sample.description?.toLowerCase() || '').includes(searchLower) ||
-            (sample.tags && Array.isArray(sample.tags) && sample.tags.some(tag => 
-              tag.toLowerCase().includes(searchLower)
-            ))
+        // Basic query without tag filtering
+        if (lastVisible) {
+          samplesQuery = query(
+            samplesRef,
+            orderBy(sortField, sortDirection),
+            startAfter(lastVisible),
+            limit(batchSize)
           );
-        });
-
-        console.log(`Filtered by search term: ${beforeCount} → ${fetchedSamples.length}`);
-
-        if (fetchedSamples.length === 0) {
-          setNoResultsReason(`No samples found matching search term: "${searchTerm}"`);
+        } else {
+          samplesQuery = query(
+            samplesRef,
+            orderBy(sortField, sortDirection),
+            limit(batchSize)
+          );
         }
-      }
 
-      // For tags, filter to ensure ALL tags match
-      if (selectedTags.length > 0) {
-        const beforeCount = fetchedSamples.length;
+        // Execute the query
+        let samplesSnapshot;
+        try {
+          samplesSnapshot = await getDocs(samplesQuery);
+        } catch (error) {
+          console.error('Error fetching samples with sortBy:', sortBy, 'Error:', error);
+          
+          // If the query fails (likely due to missing field), try again with createdAt as fallback
+          if (sortField !== 'createdAt') {
+            console.log('Falling back to createdAt sort');
+            if (lastVisible) {
+              samplesQuery = query(
+                samplesRef,
+                orderBy('createdAt', 'desc'),
+                startAfter(lastVisible),
+                limit(batchSize)
+              );
+            } else {
+              samplesQuery = query(
+                samplesRef,
+                orderBy('createdAt', 'desc'),
+                limit(batchSize)
+              );
+            }
+            samplesSnapshot = await getDocs(samplesQuery);
+          } else {
+            throw error; // Re-throw if we're already using createdAt
+          }
+        }
         
-        fetchedSamples = fetchedSamples.filter(sample => {
-          // Make sure sample.tags exists and is an array
-          if (!sample.tags || !Array.isArray(sample.tags)) {
-            return false;
+        // Check if we have results
+        if (samplesSnapshot.empty) {
+          console.log("Query returned empty results");
+          if (selectedTags.length > 0) {
+            setNoResultsReason(`No samples found containing all selected tags: ${selectedTags.join(', ')}`);
+          } else if (searchTerm) {
+            setNoResultsReason(`No samples found matching search term: "${searchTerm}"`);
+          } else {
+            setNoResultsReason('No samples available');
           }
           
-          // Check if every selected tag is included in the sample's tags
-          return selectedTags.every(selectedTag => 
-            sample.tags.some(sampleTag => 
-              sampleTag.toLowerCase() === selectedTag.toLowerCase()
-            )
-          );
+          setHasMore(false);
+          setSamples([]);
+          setLoading(false);
+          return;
+        }
+
+        // Process the results
+        let fetchedSamples = samplesSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Ensure tags exist as an array
+            tags: data.tags || []
+          };
         });
 
-        console.log(`Filtered by ${selectedTags.length} tags: ${beforeCount} → ${fetchedSamples.length}`);
+        console.log(`Fetched ${fetchedSamples.length} samples before filtering`);
+
+        // If we're sorting by popularity and some samples don't have popularityScores, 
+        // make sure we sort them correctly by adding fallback values
+        if ((sortBy === 'popular' || sortBy === 'trending') && fetchedSamples.length > 0) {
+          fetchedSamples = fetchedSamples.map(sample => {
+            if (!sample.popularityScores) {
+              // Calculate a basic score based on likes
+              const likes = sample.likes || 0;
+              const score = likes * 5; // Basic calculation
+              
+              return {
+                ...sample,
+                popularityScores: {
+                  daily: 0,
+                  weekly: 0,
+                  monthly: 0,
+                  allTime: score
+                }
+              };
+            }
+            return sample;
+          });
+          
+          // Sort manually if we're using a fallback
+          if (sortField === 'popularityScores.allTime') {
+            fetchedSamples.sort((a, b) => {
+              const scoreA = a.popularityScores?.allTime || 0;
+              const scoreB = b.popularityScores?.allTime || 0;
+              return scoreB - scoreA; // Descending order
+            });
+          } else if (sortField === 'popularityScores.weekly') {
+            fetchedSamples.sort((a, b) => {
+              const scoreA = a.popularityScores?.weekly || 0;
+              const scoreB = b.popularityScores?.weekly || 0;
+              return scoreB - scoreA; // Descending order
+            });
+          }
+        }
+
+        // For search term, filter in client
+        if (searchTerm) {
+          const searchLower = searchTerm.toLowerCase();
+          const beforeCount = fetchedSamples.length;
+          
+          // Add debug logs to help understand sample structure
+          if (beforeCount > 0) {
+            console.log('Sample structure example:', {
+              name: fetchedSamples[0].name,
+              description: fetchedSamples[0].description,
+              tags: fetchedSamples[0].tags
+            });
+          }
+          
+          fetchedSamples = fetchedSamples.filter(sample => {
+            // Handle null/undefined values safely
+            const name = sample.name?.toLowerCase() || '';
+            const description = sample.description?.toLowerCase() || '';
+            const tags = Array.isArray(sample.tags) ? sample.tags : [];
+            
+            // Log matches for debugging
+            const nameMatch = name.includes(searchLower);
+            const descMatch = description.includes(searchLower);
+            const tagMatch = tags.some(tag => tag.toLowerCase().includes(searchLower));
+            
+            // More detailed debugging for first few samples
+            if (sample.id && (fetchedSamples.indexOf(sample) < 5)) {
+              console.log(`Sample "${sample.name}" search matches:`, { 
+                nameMatch, 
+                descMatch, 
+                tagMatch,
+                searchTerm: searchLower
+              });
+            }
+            
+            return nameMatch || descMatch || tagMatch;
+          });
+
+          console.log(`Filtered by search term: ${beforeCount} → ${fetchedSamples.length}`);
+
+          if (fetchedSamples.length === 0) {
+            setNoResultsReason(`No samples found matching search term: "${searchTerm}"`);
+          }
+        }
+
+        // For tags, filter to ensure ALL tags match
+        if (selectedTags.length > 0) {
+          const beforeCount = fetchedSamples.length;
+          
+          fetchedSamples = fetchedSamples.filter(sample => {
+            // Make sure sample.tags exists and is an array
+            if (!sample.tags || !Array.isArray(sample.tags)) {
+              return false;
+            }
+            
+            // Check if every selected tag is included in the sample's tags
+            return selectedTags.every(selectedTag => 
+              sample.tags.some(sampleTag => 
+                sampleTag.toLowerCase() === selectedTag.toLowerCase()
+              )
+            );
+          });
+
+          console.log(`Filtered by ${selectedTags.length} tags: ${beforeCount} → ${fetchedSamples.length}`);
+          
+          // If no samples match all tags, set a specific reason
+          if (fetchedSamples.length === 0 && beforeCount > 0) {
+            setNoResultsReason(`No samples contain all selected tags: ${selectedTags.join(', ')}`);
+          }
+        }
+
+        // Limit to pageSize results for the UI display
+        const limitedResults = fetchedSamples.slice(0, pageSize);
         
-        // If no samples match all tags, set a specific reason
-        if (fetchedSamples.length === 0 && beforeCount > 0) {
-          setNoResultsReason(`No samples contain all selected tags: ${selectedTags.join(', ')}`);
-        }
-      }
+        console.log(`Displaying ${limitedResults.length} samples (limited to page size)`);
 
-      // Limit to pageSize results for the UI display
-      const limitedResults = fetchedSamples.slice(0, pageSize);
-      
-      console.log(`Displaying ${limitedResults.length} samples (limited to page size)`);
-
-      // Update state based on filtered results
-      const hasMoreResults = fetchedSamples.length > pageSize;
-      setHasMore(hasMoreResults);
-      
-      // If we're using client-side filtering and have few results, don't use lastVisible
-      // so next query will start fresh
-      if (selectedTags.length === 0 || fetchedSamples.length >= pageSize) {
-        setLastVisible(samplesSnapshot.docs[samplesSnapshot.docs.length - 1]);
-      } else {
-        // For heavily filtered results with few matches, don't set lastVisible
-        setLastVisible(null);
-      }
-      
-      // Update samples state
-      setSamples(prevSamples => {
-        // If we're loading a new search or filter, replace the previous results
-        if (isInitial || haveFiltersChanged()) {
-          return limitedResults;
+        // Update state based on filtered results
+        const hasMoreResults = fetchedSamples.length > pageSize;
+        setHasMore(hasMoreResults);
+        
+        // If we're using client-side filtering and have few results, don't use lastVisible
+        // so next query will start fresh
+        if (selectedTags.length === 0 || fetchedSamples.length >= pageSize) {
+          setLastVisible(samplesSnapshot.docs[samplesSnapshot.docs.length - 1]);
+        } else {
+          // For heavily filtered results with few matches, don't set lastVisible
+          setLastVisible(null);
         }
-        // Otherwise append to existing results (pagination)
-        const combinedResults = [...prevSamples, ...limitedResults];
-        // Remove duplicates
-        const uniqueResults = Array.from(
-          new Map(combinedResults.map(item => [item.id, item])).values()
-        );
-        return uniqueResults;
-      });
-      
-    } catch (err) {
-      console.error('Error fetching samples:', err);
-      setError(err.message);
+        
+        // Update samples state
+        setSamples(prevSamples => {
+          // If we're loading a new search or filter, replace the previous results
+          if (isInitial || haveFiltersChanged()) {
+            return limitedResults;
+          }
+          // Otherwise append to existing results (pagination)
+          const combinedResults = [...prevSamples, ...limitedResults];
+          // Remove duplicates
+          const uniqueResults = Array.from(
+            new Map(combinedResults.map(item => [item.id, item])).values()
+          );
+          return uniqueResults;
+        });
+        
+      } catch (err) {
+        console.error('Error fetching samples:', err);
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
       isInitialLoad.current = false;
@@ -421,8 +468,28 @@ const useSamplesData = (pageSize = 10, initialSearchTerm = '', initialTags = [],
 
   // Add initialization to refreshSamples
   const refreshSamples = () => {
+    console.log("Refreshing samples with current filters:", {
+      searchTerm,
+      selectedTags,
+      sortBy
+    });
+    
+    // Reset pagination
     setLastVisible(null);
     setHasMore(true);
+    
+    // Reset no results reason
+    setNoResultsReason('');
+    
+    // Clear cached results
+    setSamples([]);
+    
+    // Reset filters state to force a full refresh
+    lastAppliedFilters.current = {
+      searchTerm: searchTerm === lastAppliedFilters.current.searchTerm ? '' : lastAppliedFilters.current.searchTerm,
+      selectedTags: [...lastAppliedFilters.current.selectedTags],
+      sortBy: lastAppliedFilters.current.sortBy
+    };
     
     // Initialize popularity scores if sorting by popularity metrics
     if (sortBy === 'popular' || sortBy === 'trending') {

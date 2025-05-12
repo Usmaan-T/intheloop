@@ -168,20 +168,28 @@ const SamplesPage = () => {
 
   // Handle search input with debounce
   const searchTimeoutRef = useRef(null);
+  
   const handleSearchInput = (e) => {
     const value = e.target.value;
-    setSearchTerm(value);
     
     // Clear any existing timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
     
-    // Set a new timeout for refreshing (300ms debounce)
+    // Log the state change
+    console.log("Search input changed:", value);
+    
+    // Update the search term state immediately
+    setSearchTerm(value);
+    
+    // Set a new timeout for refreshing (800ms debounce - increased from 300ms)
     searchTimeoutRef.current = setTimeout(() => {
-      console.log("Search term changed, refreshing samples:", value);
+      console.log("Search debounce complete, refreshing samples with:", value);
+      
+      // Force a new search by explicitly calling refreshSamples
       refreshSamples();
-    }, 300);
+    }, 800);
   };
   
   // Cleanup timeout on unmount
@@ -414,7 +422,7 @@ const SamplesPage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
-              maxW="650px"
+              maxW="container.md"
               mx="auto"
             >
               <InputGroup size="lg">
@@ -442,6 +450,21 @@ const SamplesPage = () => {
                   h="60px"
                   transition="all 0.3s ease"
                 />
+                {searchTerm && (
+                  <Box position="absolute" right="12px" top="50%" transform="translateY(-50%)">
+                    <IconButton
+                      icon={<IoMdRefresh />}
+                      aria-label="Clear search"
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="whiteAlpha"
+                      onClick={() => {
+                        setSearchTerm('');
+                        setTimeout(() => refreshSamples(), 0);
+                      }}
+                    />
+                  </Box>
+                )}
               </InputGroup>
             </MotionBox>
           </Container>
