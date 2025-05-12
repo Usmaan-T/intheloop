@@ -491,7 +491,7 @@ const LoggedInHome = () => {
               <HStack spacing={3}>
                 <Icon as={FaCompass} color="purple.400" boxSize={6} />
                 <Heading as="h2" size="lg" color="white" fontWeight="semibold">
-                  Explore User Playlists
+                  Explore User Collections
                 </Heading>
               </HStack>
 

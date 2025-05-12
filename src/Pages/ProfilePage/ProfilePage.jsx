@@ -108,8 +108,8 @@ const ProfilePage = () => {
     playlistDisclosure.onClose();
     
     toast({
-      title: "Playlist Created",
-      description: "Your new playlist has been created successfully!",
+      title: "Collection Created",
+      description: "Your new collection has been created successfully!",
       status: "success",
       duration: 5000,
       isClosable: true,
@@ -231,7 +231,7 @@ const ProfilePage = () => {
                   px={6}
                   mr={2}
                 >
-                  Playlists
+                  Collections
                 </Tab>
                 <Tab 
                   color="gray.300" 
@@ -321,7 +321,7 @@ const ProfilePage = () => {
                   </Box>
                 </TabPanel>
                 
-                {/* Playlists Tab */}
+                {/* Collections Tab */}
                 <TabPanel px={0}>
                   <Flex justify="flex-end" mb={6}>
                     <Button 
@@ -334,7 +334,7 @@ const ProfilePage = () => {
                       _hover={{ transform: "translateY(-2px)", boxShadow: "lg" }}
                       transition="all 0.2s"
                     >
-                      Create Playlist
+                      Create Collection
                     </Button>
                   </Flex>
                   
@@ -368,7 +368,7 @@ const ProfilePage = () => {
                         </Flex>
                       ) : playlistsError ? (
                         <Text color="red.300" textAlign="center" fontSize="lg">
-                          Error loading your playlists
+                          Error loading your collections
                         </Text>
                       ) : playlists && playlists.length > 0 ? (
                         <PlaylistsSection 
@@ -387,10 +387,10 @@ const ProfilePage = () => {
                           textAlign="center"
                         >
                           <Text color="gray.400" fontSize="lg" mb={4}>
-                            No playlists yet
+                            No collections yet
                           </Text>
                           <Text color="gray.600" maxW="400px">
-                            Create your first playlist to organize your favorite samples and share them with others.
+                            Create your first collection to organize your favorite samples and share them with others.
                           </Text>
                         </Flex>
                       )}

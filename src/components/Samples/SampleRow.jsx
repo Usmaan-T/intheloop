@@ -28,9 +28,10 @@ import {
   VStack,
   Image,
   Spinner,
+  Center,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
-import { MdMusicNote } from 'react-icons/md';
+import { MdMusicNote, MdPlaylistAdd, MdPlaylistPlay } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
@@ -101,37 +102,43 @@ const SampleRow = ({ track, onDelete }) => {
   // Handle adding to playlist
   const handleAddToPlaylist = async (playlist) => {
     try {
-      // Make sure track has required fields
-      if (!track || !track.id || !track.audioUrl) {
-        console.error("Invalid track data:", track);
-        return;
-      }
+      console.log("Adding track to collection:", playlist.name);
       
-      // Create a track object with essential properties
+      // If we don't have a trackId, use track UID
       const trackToAdd = {
         id: track.id,
-        name: track.name || 'Untitled Track',
+        name: track.name,
         audioUrl: track.audioUrl,
-        // Include optional fields only if they exist
-        ...(track.imageUrl ? { coverImage: track.imageUrl } : {}),
-        ...(track.key ? { key: track.key } : {}),
-        ...(track.bpm ? { bpm: track.bpm } : {}),
-        // Include tags with a fallback to empty array
-        tags: Array.isArray(track.tags) ? [...track.tags] : [],
-        // Metadata
-        userId: track.userId,
-        addedBy: user?.uid,
-        addedAt: new Date()
+        coverImage: track.coverImage,
+        duration: track.duration,
+        waveformData: track.waveformData,
+        bpm: track.bpm,
+        key: track.key,
+        addedAt: new Date().toISOString()
       };
       
-      // Add the track using the hook
+      // Call the addToPlaylist function from the hook
       const success = await addToPlaylist(trackToAdd, playlist);
       
       if (success) {
+        toast({
+          title: "Added to collection",
+          description: `Track added to ${playlist.name}`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
         onClosePlaylistModal();
       }
     } catch (error) {
       console.error("Error in handleAddToPlaylist:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add track to collection",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
   
@@ -264,19 +271,17 @@ const SampleRow = ({ track, onDelete }) => {
             </Tooltip>
             
             {/* Add to playlist button */}
-            <Tooltip label="Add to playlist">
-              <MotionIconButton
-                icon={<FaPlus />}
-                aria-label="Add to playlist"
-                size="sm"
-                isRound
-                colorScheme="whiteAlpha"
-                variant="ghost"
-                whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                whileTap={{ scale: 0.95 }}
-                transition="all 0.2s"
-                color="white"
+            <Tooltip label="Add to collection">
+              <IconButton
+                aria-label="Add to collection"
+                icon={<MdPlaylistAdd />}
+                size="md"
+                variant="ghost" 
+                color="purple.400"
+                borderRadius="full"
+                mr={1}
                 onClick={onOpenPlaylistModal}
+                isDisabled={!user}
               />
             </Tooltip>
             
@@ -458,82 +463,79 @@ const SampleRow = ({ track, onDelete }) => {
       
       {/* Playlist modal */}
       <Modal isOpen={isPlaylistModalOpen} onClose={onClosePlaylistModal} size="md">
-        <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent bg="rgba(20, 20, 30, 0.95)" color="white" borderColor="whiteAlpha.200" borderWidth="1px">
-          <ModalHeader fontSize="xl" fontWeight="bold">Add to Playlist</ModalHeader>
-          <ModalCloseButton color="white" />
+        <ModalOverlay backdropFilter="blur(5px)" />
+        <ModalContent bg="darkBg.800" border="1px solid" borderColor="whiteAlpha.200">
+          <ModalHeader fontSize="xl" fontWeight="bold">Add to Collection</ModalHeader>
+          <ModalCloseButton />
           <ModalBody pb={6}>
             {playlistsLoading ? (
-              <Flex justify="center" py={4}>
-                <Spinner color="red.500" />
-              </Flex>
+              <Center py={4}>
+                <Spinner size="md" color="purple.400" />
+              </Center>
             ) : playlists && playlists.length > 0 ? (
-              <List spacing={3}>
+              <List spacing={2}>
                 {playlists.map(playlist => (
                   <ListItem key={playlist.id}>
-                    <Button
-                      variant="ghost"
-                      justifyContent="flex-start"
-                      width="100%"
-                      py={2}
-                      px={3}
+                    <Flex 
+                      p={3} 
+                      borderRadius="md" 
+                      alignItems="center" 
+                      border="1px solid"
+                      borderColor="whiteAlpha.200"
+                      cursor="pointer"
                       onClick={() => handleAddToPlaylist(playlist)}
-                      isLoading={isAdding}
-                      _hover={{ bg: "whiteAlpha.200" }}
-                      color="white"
+                      _hover={{ bg: "rgba(255, 255, 255, 0.05)" }}
+                      transition="all 0.2s ease"
                     >
-                      <HStack spacing={3} width="100%">
-                        <Box
-                          width="40px"
-                          height="40px"
-                          borderRadius="md"
-                          bg={playlist.coverImage ? "transparent" : "red.500"}
-                          overflow="hidden"
-                        >
-                          {playlist.coverImage ? (
-                            <Image 
-                              src={playlist.coverImage} 
-                              alt={playlist.name} 
-                              width="100%" 
-                              height="100%" 
-                              objectFit="cover"
-                            />
-                          ) : (
-                            <Flex
-                              width="100%"
-                              height="100%"
-                              justifyContent="center"
-                              alignItems="center"
-                            >
-                              <Icon as={MdMusicNote} color="white" boxSize={6} />
-                            </Flex>
-                          )}
-                        </Box>
-                        <VStack align="start" spacing={0} flex={1}>
-                          <Text fontWeight="medium" color="white">{playlist.name}</Text>
-                          <Text fontSize="xs" color="gray.300">
-                            {playlist.tracks?.length || 0} tracks
-                          </Text>
-                        </VStack>
-                      </HStack>
-                    </Button>
+                      <Box 
+                        w="40px" 
+                        h="40px" 
+                        borderRadius="md" 
+                        mr={3}
+                        bg={playlist.coverImage ? "transparent" : "purple.500"}
+                        overflow="hidden"
+                      >
+                        {playlist.coverImage ? (
+                          <Image 
+                            src={playlist.coverImage} 
+                            alt={playlist.name} 
+                            objectFit="cover"
+                            w="full"
+                            h="full"
+                          />
+                        ) : (
+                          <Center h="full" color="white" fontSize="lg">
+                            <MdPlaylistPlay />
+                          </Center>
+                        )}
+                      </Box>
+                      <Box flex="1">
+                        <Text fontWeight="medium" color="white">{playlist.name}</Text>
+                        <Text fontSize="xs" color="whiteAlpha.700">
+                          {playlist.tracks?.length || 0} tracks
+                        </Text>
+                      </Box>
+                    </Flex>
                   </ListItem>
                 ))}
               </List>
             ) : (
-              <VStack spacing={3} py={4}>
-                <Text color="white">You don't have any playlists yet</Text>
-                <Button colorScheme="red" size="sm" onClick={() => {
-                  onClosePlaylistModal();
-                  navigate('/createplaylist');
-                }}>
-                  Create Playlist
+              <VStack spacing={4} py={4}>
+                <Text color="white">You don't have any collections yet</Text>
+                <Button 
+                  colorScheme="purple" 
+                  onClick={() => {
+                    onClosePlaylistModal();
+                    navigate('/createplaylist');
+                  }}
+                >
+                  Create Collection
                 </Button>
               </VStack>
             )}
           </ModalBody>
           <ModalFooter>
-            <Button variant="outline" colorScheme="red" onClick={onClosePlaylistModal}>
+            <Button variant="outline" colorScheme="purple" onClick={onClosePlaylistModal}>
               Cancel
             </Button>
           </ModalFooter>

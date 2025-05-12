@@ -29,19 +29,19 @@ import SampleRow from '../../components/Samples/SampleRow';
 
 const PlaylistDetailPage = () => {
   const { id } = useParams();
-  const [playlist, setPlaylist] = useState(null);
+  const [collection, setCollection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [creator, setCreator] = useState(null);
   const [user] = useAuthState(auth);
   const toast = useToast();
 
-  // Handle track deletion from playlist
+  // Handle track deletion from collection
   const handleDeleteTrack = (trackId) => {
     // Only update the UI - actual deletion is handled by the useDeleteSample hook
-    if (playlist && playlist.tracks) {
-      const updatedTracks = playlist.tracks.filter(track => track.id !== trackId);
-      setPlaylist(prev => ({
+    if (collection && collection.tracks) {
+      const updatedTracks = collection.tracks.filter(track => track.id !== trackId);
+      setCollection(prev => ({
         ...prev,
         tracks: updatedTracks
       }));
@@ -56,37 +56,37 @@ const PlaylistDetailPage = () => {
     }
   };
 
-  // Fetch playlist data
+  // Fetch collection data
   useEffect(() => {
-    const fetchPlaylist = async () => {
+    const fetchCollection = async () => {
       try {
         setLoading(true);
         setError(null);
         
-        const playlistRef = doc(firestore, 'playlists', id);
-        const playlistSnapshot = await getDoc(playlistRef);
+        const collectionRef = doc(firestore, 'playlists', id);
+        const collectionSnapshot = await getDoc(collectionRef);
         
-        if (!playlistSnapshot.exists()) {
-          setError('Playlist not found');
+        if (!collectionSnapshot.exists()) {
+          setError('Collection not found');
           return;
         }
 
-        if (playlistSnapshot.data().privacy === 'private' && user.uid !== playlistSnapshot.data().userId) {
-          setError('Playlist is private');
+        if (collectionSnapshot.data().privacy === 'private' && user.uid !== collectionSnapshot.data().userId) {
+          setError('Collection is private');
           return;
 
         }
         
-        const playlistData = {
-          id: playlistSnapshot.id,
-          ...playlistSnapshot.data()
+        const collectionData = {
+          id: collectionSnapshot.id,
+          ...collectionSnapshot.data()
         };
         
-        setPlaylist(playlistData);
+        setCollection(collectionData);
         
         // Fetch creator data if userId exists
-        if (playlistData.userId) {
-          const creatorRef = doc(firestore, 'users', playlistData.userId);
+        if (collectionData.userId) {
+          const creatorRef = doc(firestore, 'users', collectionData.userId);
           const creatorSnapshot = await getDoc(creatorRef);
           
           if (creatorSnapshot.exists()) {
@@ -94,12 +94,12 @@ const PlaylistDetailPage = () => {
           }
         }
       } catch (err) {
-        console.error('Error fetching playlist:', err);
-        setError('Failed to load playlist data');
+        console.error('Error fetching collection:', err);
+        setError('Failed to load collection data');
         
         toast({
           title: 'Error',
-          description: 'Failed to load playlist data',
+          description: 'Failed to load collection data',
           status: 'error',
           duration: 3000,
           isClosable: true
@@ -109,10 +109,10 @@ const PlaylistDetailPage = () => {
       }
     };
     
-    fetchPlaylist();
+    fetchCollection();
   }, [id, toast]);
 
-  // Generate background color from playlist name
+  // Generate background color from collection name
   const generateColor = (name) => {
     if (!name) return '#8A2BE2';
     
@@ -134,7 +134,7 @@ const PlaylistDetailPage = () => {
         <Flex height="calc(100vh - 80px)" justify="center" align="center">
           <VStack spacing={4}>
             <Spinner size="xl" color="red.500" thickness="4px" />
-            <Text color="white">Loading playlist...</Text>
+            <Text color="white">Loading collection...</Text>
           </VStack>
         </Flex>
       </>
@@ -162,7 +162,7 @@ const PlaylistDetailPage = () => {
     <>
       <NavBar />
       <Box minH="calc(100vh - 80px)" bg="blackAlpha.900">
-        {/* Hero section with playlist details */}
+        {/* Hero section with collection details */}
         <Box 
           bg="rgba(20, 20, 30, 0.8)"
           py={10} 
@@ -176,7 +176,7 @@ const PlaylistDetailPage = () => {
               align={{ base: 'center', md: 'flex-start' }}
               gap={6}
             >
-              {/* Playlist cover */}
+              {/* Collection cover */}
               <Box 
                 width={{ base: '200px', md: '250px' }}
                 height={{ base: '200px', md: '250px' }}
@@ -184,17 +184,17 @@ const PlaylistDetailPage = () => {
                 boxShadow="2xl"
                 overflow="hidden"
               >
-                {playlist?.coverImage ? (
+                {collection?.coverImage ? (
                   <Image 
-                    src={playlist.coverImage}
-                    alt={playlist?.name}
+                    src={collection.coverImage}
+                    alt={collection?.name}
                     objectFit="cover"
                     w="100%"
                     h="100%"
                   />
                 ) : (
                   <Flex 
-                    bg={generateColor(playlist?.name)}
+                    bg={generateColor(collection?.name)}
                     width="100%"
                     height="100%"
                     align="center"
@@ -205,7 +205,7 @@ const PlaylistDetailPage = () => {
                 )}
               </Box>
               
-              {/* Playlist info */}
+              {/* Collection info */}
               <VStack 
                 align={{ base: 'center', md: 'flex-start' }} 
                 spacing={3}
@@ -213,17 +213,17 @@ const PlaylistDetailPage = () => {
                 py={{ base: 2, md: 6 }}
                 textAlign={{ base: 'center', md: 'left' }}
               >
-                <Badge colorScheme={playlist?.privacy === 'private' ? 'red' : 'green'}>
-                  {playlist?.privacy === 'private' ? 'Private' : 'Public'}
+                <Badge colorScheme={collection?.privacy === 'private' ? 'red' : 'green'}>
+                  {collection?.privacy === 'private' ? 'Private' : 'Public'}
                 </Badge>
                 
                 <Heading as="h1" size="2xl" color="white">
-                  {playlist?.name || 'Untitled Playlist'}
+                  {collection?.name || 'Untitled Collection'}
                 </Heading>
                 
-                {playlist?.description && (
+                {collection?.description && (
                   <Text color="gray.300" fontSize="md">
-                    {playlist.description}
+                    {collection.description}
                   </Text>
                 )}
                 
@@ -238,7 +238,7 @@ const PlaylistDetailPage = () => {
                   )}
                   
                   <Text color="gray.400" fontSize="sm">
-                    {playlist?.tracks?.length || 0} tracks
+                    {collection?.tracks?.length || 0} tracks
                   </Text>
                 </HStack>
                 
@@ -247,7 +247,7 @@ const PlaylistDetailPage = () => {
                   leftIcon={<FaPlay />}
                   colorScheme="red"
                   size="lg"
-                  isDisabled={!playlist?.tracks?.length}
+                  isDisabled={!collection?.tracks?.length}
                 >
                   Play All
                 </Button>
@@ -256,9 +256,9 @@ const PlaylistDetailPage = () => {
           </Container>
         </Box>
         
-        {/* Playlist tracks */}
+        {/* Collection tracks */}
         <Container maxW="container.xl" py={8} px={{ base: 4, lg: 8 }}>
-          {playlist?.tracks?.length > 0 ? (
+          {collection?.tracks?.length > 0 ? (
             <>
               <Heading as="h3" size="md" color="white" mb={4}>
                 Tracks
@@ -273,7 +273,7 @@ const PlaylistDetailPage = () => {
                 p={{ base: 4, md: 6 }}
               >
                 {/* Replace PlaylistTrackItem with SampleRow */}
-                {playlist.tracks.map((track) => (
+                {collection.tracks.map((track) => (
                   <SampleRow 
                     key={track.id || `track-${Math.random()}`} 
                     track={track}
@@ -295,7 +295,7 @@ const PlaylistDetailPage = () => {
             >
               <Icon as={MdMusicNote} fontSize="5xl" color="gray.500" />
               <Heading as="h3" size="md" color="gray.400">
-                This playlist is empty
+                This collection is empty
               </Heading>
               <Text color="gray.500">
                 Add tracks to get started

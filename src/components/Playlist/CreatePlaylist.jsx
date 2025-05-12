@@ -80,11 +80,11 @@ const CreatePlaylist = ({ isOpen, onClose, onSuccess }) => {
 
       {/* Name Field */}
       <FormControl isRequired>
-        <FormLabel>Playlist Name</FormLabel>
+        <FormLabel>Collection Name</FormLabel>
         <Input
           value={inputs.name || ''}
           onChange={(e) => setInputs({ ...inputs, name: e.target.value })}
-          placeholder="Enter playlist name"
+          placeholder="Enter collection name"
           bg="whiteAlpha.100"
         />
       </FormControl>
@@ -95,7 +95,7 @@ const CreatePlaylist = ({ isOpen, onClose, onSuccess }) => {
         <Textarea
           value={inputs.description || ''}
           onChange={(e) => setInputs({ ...inputs, description: e.target.value })}
-          placeholder="What's this playlist about?"
+          placeholder="What's this collection about?"
           bg="whiteAlpha.100"
           rows={3}
         />
@@ -139,7 +139,7 @@ const CreatePlaylist = ({ isOpen, onClose, onSuccess }) => {
             isLoading={loading}
             loadingText="Creating..."
           >
-            Create Playlist
+            Create Collection
           </Button>
         </HStack>
       </VStack>
@@ -150,7 +150,7 @@ const CreatePlaylist = ({ isOpen, onClose, onSuccess }) => {
     <Modal isOpen={isOpen} onClose={onClose} size="md">
       <ModalOverlay backdropFilter="blur(3px)" />
       <ModalContent bg="gray.900" color="white">
-        <ModalHeader>Create New Playlist</ModalHeader>
+        <ModalHeader>Create New Collection</ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           {renderForm()}
@@ -161,7 +161,7 @@ const CreatePlaylist = ({ isOpen, onClose, onSuccess }) => {
     <Container maxW="container.md" py={8}>
       <VStack spacing={6} align="stretch" bg="rgba(20, 20, 30, 0.8)" 
         borderRadius="lg" p={6} border="1px solid" borderColor="whiteAlpha.200">
-        <Heading as="h2" size="lg" color="white">Create New Playlist</Heading>
+        <Heading as="h2" size="lg" color="white">Create New Collection</Heading>
         {renderForm()}
       </VStack>
     </Container>

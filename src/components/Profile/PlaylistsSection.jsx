@@ -47,8 +47,8 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick, showHe
       {/* Only show header if showHeader is true */}
       {showHeader && (
         <Flex justify="space-between" align="center" mb={4}>
-          <Heading as="h2" size="xl" color="white">
-            My Playlists
+          <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4}>
+            Collections
           </Heading>
           <IconButton
             icon={<AddIcon />}
