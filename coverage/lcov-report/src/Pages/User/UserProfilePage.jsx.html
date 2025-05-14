@@ -288,39 +288,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -330,6 +313,8 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -355,8 +340,23 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -473,6 +473,7 @@ import {
   Tab,
   TabPanels,
   TabPanel,
+  Center,
 } from '@chakra-ui/react';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
@@ -573,7 +574,7 @@ const UserProfilePage = <span class="cstat-no" title="statement not covered" ><s
           &lt;Tabs colorScheme="red" variant="line"&gt;
             &lt;TabList borderBottomColor="whiteAlpha.200"&gt;
               &lt;Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}&gt;Samples&lt;/Tab&gt;
-              &lt;Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}&gt;Playlists&lt;/Tab&gt;
+              &lt;Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}&gt;Collections&lt;/Tab&gt;
               &lt;Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}&gt;Likes&lt;/Tab&gt;
             &lt;/TabList&gt;
             
@@ -606,7 +607,7 @@ const UserProfilePage = <span class="cstat-no" title="statement not covered" ><s
                 &lt;/Box&gt;
               &lt;/TabPanel&gt;
               
-              {/* Playlists Tab */}
+              {/* Collections Tab */}
               &lt;TabPanel px={0}&gt;
                 &lt;Box
                   bg="rgba(20, 20, 30, 0.8)"
@@ -616,21 +617,20 @@ const UserProfilePage = <span class="cstat-no" title="statement not covered" ><s
                   borderColor="whiteAlpha.200"
                 &gt;
                   {playlistsLoading ? (
-                    &lt;Flex justify="center" py={10}&gt;
+                    &lt;Center py={12}&gt;
                       &lt;Spinner size="xl" color="red.500" thickness="4px" /&gt;
-                    &lt;/Flex&gt;
+                    &lt;/Center&gt;
                   ) : playlistsError ? (
-                    &lt;Text color="red.300" textAlign="center"&gt;Error loading playlists&lt;/Text&gt;
+                    &lt;Text color="red.300" textAlign="center"&gt;Error loading collections&lt;/Text&gt;
                   ) : playlists &amp;&amp; playlists.length &gt; 0 ? (
-                    &lt;PlaylistsSection 
+                    &lt;PlaylistsSection
                       playlists={playlists}
-                      isLoading={false}
-                      error={null}
-                      onAddClick={null}
-                      showHeader={false}
+                      isOwner={false}
+                      currentUser={user}
+                      userId={userId}
                     /&gt;
                   ) : (
-                    &lt;Text color="gray.400" textAlign="center"&gt;No playlists yet&lt;/Text&gt;
+                    &lt;Text color="gray.400" textAlign="center"&gt;No collections yet&lt;/Text&gt;
                   )}
                 &lt;/Box&gt;
               &lt;/TabPanel&gt;
@@ -664,7 +664,7 @@ export default UserProfilePage;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-10T22:47:31.264Z
+                at 2025-05-14T20:00:04.378Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

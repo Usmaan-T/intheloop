@@ -734,19 +734,19 @@ import SampleRow from '../../components/Samples/SampleRow';
 &nbsp;
 const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
   const { id } = <span class="cstat-no" title="statement not covered" >useParams();</span>
-  const [playlist, setPlaylist] = <span class="cstat-no" title="statement not covered" >useState(null);</span>
+  const [collection, setCollection] = <span class="cstat-no" title="statement not covered" >useState(null);</span>
   const [loading, setLoading] = <span class="cstat-no" title="statement not covered" >useState(true);</span>
   const [error, setError] = <span class="cstat-no" title="statement not covered" >useState(null);</span>
   const [creator, setCreator] = <span class="cstat-no" title="statement not covered" >useState(null);</span>
   const [user] = <span class="cstat-no" title="statement not covered" >useAuthState(auth);</span>
   const toast = <span class="cstat-no" title="statement not covered" >useToast();</span>
 &nbsp;
-  // Handle track deletion from playlist
+  // Handle track deletion from collection
   const handleDeleteTrack = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(t</span>rackId) =&gt; {</span>
     // Only update the UI - actual deletion is handled by the useDeleteSample hook
-<span class="cstat-no" title="statement not covered" >    if (playlist &amp;&amp; playlist.tracks) {</span>
-      const updatedTracks = <span class="cstat-no" title="statement not covered" >playlist.tracks.filter(<span class="fstat-no" title="function not covered" >tr</span>ack =&gt; <span class="cstat-no" title="statement not covered" >track.id !== trackId)</span>;</span>
-<span class="cstat-no" title="statement not covered" >      setPlaylist(<span class="fstat-no" title="function not covered" >pr</span>ev =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
+<span class="cstat-no" title="statement not covered" >    if (collection &amp;&amp; collection.tracks) {</span>
+      const updatedTracks = <span class="cstat-no" title="statement not covered" >collection.tracks.filter(<span class="fstat-no" title="function not covered" >tr</span>ack =&gt; <span class="cstat-no" title="statement not covered" >track.id !== trackId)</span>;</span>
+<span class="cstat-no" title="statement not covered" >      setCollection(<span class="fstat-no" title="function not covered" >pr</span>ev =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
         ...prev,
         tracks: updatedTracks
       }));
@@ -761,37 +761,37 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
     }
   };
 &nbsp;
-  // Fetch playlist data
+  // Fetch collection data
 <span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-    const fetchPlaylist = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
+    const fetchCollection = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >as</span>ync () =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >      try {</span>
 <span class="cstat-no" title="statement not covered" >        setLoading(true);</span>
 <span class="cstat-no" title="statement not covered" >        setError(null);</span>
         
-        const playlistRef = <span class="cstat-no" title="statement not covered" >doc(firestore, 'playlists', id);</span>
-        const playlistSnapshot = <span class="cstat-no" title="statement not covered" >await getDoc(playlistRef);</span>
+        const collectionRef = <span class="cstat-no" title="statement not covered" >doc(firestore, 'playlists', id);</span>
+        const collectionSnapshot = <span class="cstat-no" title="statement not covered" >await getDoc(collectionRef);</span>
         
-<span class="cstat-no" title="statement not covered" >        if (!playlistSnapshot.exists()) {</span>
-<span class="cstat-no" title="statement not covered" >          setError('Playlist not found');</span>
+<span class="cstat-no" title="statement not covered" >        if (!collectionSnapshot.exists()) {</span>
+<span class="cstat-no" title="statement not covered" >          setError('Collection not found');</span>
 <span class="cstat-no" title="statement not covered" >          return;</span>
         }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        if (playlistSnapshot.data().privacy === 'private' &amp;&amp; user.uid !== playlistSnapshot.data().userId) {</span>
-<span class="cstat-no" title="statement not covered" >          setError('Playlist is private');</span>
+<span class="cstat-no" title="statement not covered" >        if (collectionSnapshot.data().privacy === 'private' &amp;&amp; user.uid !== collectionSnapshot.data().userId) {</span>
+<span class="cstat-no" title="statement not covered" >          setError('Collection is private');</span>
 <span class="cstat-no" title="statement not covered" >          return;</span>
 &nbsp;
         }
         
-        const playlistData = <span class="cstat-no" title="statement not covered" >{</span>
-          id: playlistSnapshot.id,
-          ...playlistSnapshot.data()
+        const collectionData = <span class="cstat-no" title="statement not covered" >{</span>
+          id: collectionSnapshot.id,
+          ...collectionSnapshot.data()
         };
         
-<span class="cstat-no" title="statement not covered" >        setPlaylist(playlistData);</span>
+<span class="cstat-no" title="statement not covered" >        setCollection(collectionData);</span>
         
         // Fetch creator data if userId exists
-<span class="cstat-no" title="statement not covered" >        if (playlistData.userId) {</span>
-          const creatorRef = <span class="cstat-no" title="statement not covered" >doc(firestore, 'users', playlistData.userId);</span>
+<span class="cstat-no" title="statement not covered" >        if (collectionData.userId) {</span>
+          const creatorRef = <span class="cstat-no" title="statement not covered" >doc(firestore, 'users', collectionData.userId);</span>
           const creatorSnapshot = <span class="cstat-no" title="statement not covered" >await getDoc(creatorRef);</span>
           
 <span class="cstat-no" title="statement not covered" >          if (creatorSnapshot.exists()) {</span>
@@ -799,12 +799,12 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
           }
         }
       } catch (err) {
-<span class="cstat-no" title="statement not covered" >        console.error('Error fetching playlist:', err);</span>
-<span class="cstat-no" title="statement not covered" >        setError('Failed to load playlist data');</span>
+<span class="cstat-no" title="statement not covered" >        console.error('Error fetching collection:', err);</span>
+<span class="cstat-no" title="statement not covered" >        setError('Failed to load collection data');</span>
         
 <span class="cstat-no" title="statement not covered" >        toast({</span>
           title: 'Error',
-          description: 'Failed to load playlist data',
+          description: 'Failed to load collection data',
           status: 'error',
           duration: 3000,
           isClosable: true
@@ -814,10 +814,10 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
       }
     };
     
-<span class="cstat-no" title="statement not covered" >    fetchPlaylist();</span>
+<span class="cstat-no" title="statement not covered" >    fetchCollection();</span>
   }, [id, toast]);
 &nbsp;
-  // Generate background color from playlist name
+  // Generate background color from collection name
   const generateColor = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(n</span>ame) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >    if (!name) <span class="cstat-no" title="statement not covered" >return '#8A2BE2';</span></span>
     
@@ -839,7 +839,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
         &lt;Flex height="calc(100vh - 80px)" justify="center" align="center"&gt;
           &lt;VStack spacing={4}&gt;
             &lt;Spinner size="xl" color="red.500" thickness="4px" /&gt;
-            &lt;Text color="white"&gt;Loading playlist...&lt;/Text&gt;
+            &lt;Text color="white"&gt;Loading collection...&lt;/Text&gt;
           &lt;/VStack&gt;
         &lt;/Flex&gt;
       &lt;/&gt;
@@ -867,7 +867,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
     &lt;&gt;
       &lt;NavBar /&gt;
       &lt;Box minH="calc(100vh - 80px)" bg="blackAlpha.900"&gt;
-        {/* Hero section with playlist details */}
+        {/* Hero section with collection details */}
         &lt;Box 
           bg="rgba(20, 20, 30, 0.8)"
           py={10} 
@@ -881,7 +881,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
               align={{ base: 'center', md: 'flex-start' }}
               gap={6}
             &gt;
-              {/* Playlist cover */}
+              {/* Collection cover */}
               &lt;Box 
                 width={{ base: '200px', md: '250px' }}
                 height={{ base: '200px', md: '250px' }}
@@ -889,17 +889,17 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                 boxShadow="2xl"
                 overflow="hidden"
               &gt;
-                {playlist?.coverImage ? (
+                {collection?.coverImage ? (
                   &lt;Image 
-                    src={playlist.coverImage}
-                    alt={playlist?.name}
+                    src={collection.coverImage}
+                    alt={collection?.name}
                     objectFit="cover"
                     w="100%"
                     h="100%"
                   /&gt;
                 ) : (
                   &lt;Flex 
-                    bg={generateColor(playlist?.name)}
+                    bg={generateColor(collection?.name)}
                     width="100%"
                     height="100%"
                     align="center"
@@ -910,7 +910,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                 )}
               &lt;/Box&gt;
               
-              {/* Playlist info */}
+              {/* Collection info */}
               &lt;VStack 
                 align={{ base: 'center', md: 'flex-start' }} 
                 spacing={3}
@@ -918,17 +918,17 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                 py={{ base: 2, md: 6 }}
                 textAlign={{ base: 'center', md: 'left' }}
               &gt;
-                &lt;Badge colorScheme={playlist?.privacy === 'private' ? 'red' : 'green'}&gt;
-                  {playlist?.privacy === 'private' ? 'Private' : 'Public'}
+                &lt;Badge colorScheme={collection?.privacy === 'private' ? 'red' : 'green'}&gt;
+                  {collection?.privacy === 'private' ? 'Private' : 'Public'}
                 &lt;/Badge&gt;
                 
                 &lt;Heading as="h1" size="2xl" color="white"&gt;
-                  {playlist?.name || 'Untitled Playlist'}
+                  {collection?.name || 'Untitled Collection'}
                 &lt;/Heading&gt;
                 
-                {playlist?.description &amp;&amp; (
+                {collection?.description &amp;&amp; (
                   &lt;Text color="gray.300" fontSize="md"&gt;
-                    {playlist.description}
+                    {collection.description}
                   &lt;/Text&gt;
                 )}
                 
@@ -943,7 +943,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                   )}
                   
                   &lt;Text color="gray.400" fontSize="sm"&gt;
-                    {playlist?.tracks?.length || 0} tracks
+                    {collection?.tracks?.length || 0} tracks
                   &lt;/Text&gt;
                 &lt;/HStack&gt;
                 
@@ -952,7 +952,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                   leftIcon={&lt;FaPlay /&gt;}
                   colorScheme="red"
                   size="lg"
-                  isDisabled={!playlist?.tracks?.length}
+                  isDisabled={!collection?.tracks?.length}
                 &gt;
                   Play All
                 &lt;/Button&gt;
@@ -961,9 +961,9 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
           &lt;/Container&gt;
         &lt;/Box&gt;
         
-        {/* Playlist tracks */}
+        {/* Collection tracks */}
         &lt;Container maxW="container.xl" py={8} px={{ base: 4, lg: 8 }}&gt;
-          {playlist?.tracks?.length &gt; 0 ? (
+          {collection?.tracks?.length &gt; 0 ? (
             &lt;&gt;
               &lt;Heading as="h3" size="md" color="white" mb={4}&gt;
                 Tracks
@@ -978,7 +978,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
                 p={{ base: 4, md: 6 }}
               &gt;
                 {/* Replace PlaylistTrackItem with SampleRow */}
-                {playlist.tracks.map(<span class="fstat-no" title="function not covered" >(t</span>rack) =&gt; (
+                {collection.tracks.map(<span class="fstat-no" title="function not covered" >(t</span>rack) =&gt; (
 <span class="cstat-no" title="statement not covered" >                  &lt;SampleRow </span>
                     key={track.id || `track-${Math.random()}`} 
                     track={track}
@@ -1000,7 +1000,7 @@ const PlaylistDetailPage = <span class="cstat-no" title="statement not covered" 
             &gt;
               &lt;Icon as={MdMusicNote} fontSize="5xl" color="gray.500" /&gt;
               &lt;Heading as="h3" size="md" color="gray.400"&gt;
-                This playlist is empty
+                This collection is empty
               &lt;/Heading&gt;
               &lt;Text color="gray.500"&gt;
                 Add tracks to get started
@@ -1030,7 +1030,7 @@ export default PlaylistDetailPage;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-10T22:47:31.264Z
+                at 2025-05-14T20:00:04.378Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>
