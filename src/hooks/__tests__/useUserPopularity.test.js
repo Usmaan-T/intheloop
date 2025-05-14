@@ -9,7 +9,8 @@ jest.mock('firebase/firestore', () => ({
   where: jest.fn(),
   getDocs: jest.fn(),
   doc: jest.fn(),
-  updateDoc: jest.fn()
+  updateDoc: jest.fn(),
+  runTransaction: jest.fn()
 }));
 
 jest.mock('../../firebase/firebase', () => ({
@@ -32,9 +33,21 @@ describe('useUserPopularity', () => {
   let mockSetPopularityScore;
   let mockSetLoading;
   let mockSetError;
+  let useEffectSpy;
+  let clearIntervalMock;
+  let setIntervalMock;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Mock setTimeout and clearTimeout
+    jest.useFakeTimers();
+    
+    // Mock setInterval and clearInterval
+    setIntervalMock = jest.fn().mockReturnValue(123); // Return a mock interval ID
+    clearIntervalMock = jest.fn();
+    global.setInterval = setIntervalMock;
+    global.clearInterval = clearIntervalMock;
     
     // Mock useState to control state updates
     const mockUseState = jest.spyOn(reactModule, 'useState');
@@ -60,6 +73,9 @@ describe('useUserPopularity', () => {
       mockSetError
     ]);
 
+    // Mock useEffect to capture cleanup function
+    useEffectSpy = jest.spyOn(reactModule, 'useEffect');
+
     // Mock the implementation of calculateUserPopularity
     jest.spyOn(userPopularityModule, 'calculateUserPopularity').mockImplementation(() => 
       Promise.resolve({
@@ -71,6 +87,7 @@ describe('useUserPopularity', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    jest.useRealTimers();
   });
 
   test('should initialize with default values', () => {
@@ -182,5 +199,113 @@ describe('useUserPopularity', () => {
         popularityScore: mockPopularityScore
       })
     );
+  });
+
+  // Test to cover autoUpdate feature (line 151, 156)
+  test('should set up interval when autoUpdate is true', async () => {
+    // Render hook with autoUpdate enabled
+    renderHook(() => useUserPopularity(userId, true));
+    
+    // Check that setInterval was called with correct time
+    expect(setIntervalMock).toHaveBeenCalledWith(expect.any(Function), 1000 * 60 * 60);
+    
+    // Extract the useEffect cleanup function
+    const cleanupFn = useEffectSpy.mock.calls[0][0]();
+    
+    // Call the cleanup function
+    cleanupFn();
+    
+    // Verify interval was cleared
+    expect(clearIntervalMock).toHaveBeenCalledWith(123);
+  });
+  
+  // Test to cover the early return in updatePopularityScore (line 113)
+  test('should not update popularity score when userId is not provided', async () => {
+    // Render hook without userId
+    const { result } = renderHook(() => useUserPopularity(null));
+    
+    // Reset mocks
+    mockSetLoading.mockClear();
+    jest.spyOn(userPopularityModule, 'calculateUserPopularity').mockClear();
+    
+    // Call updatePopularityScore
+    await act(async () => {
+      await result.current.updatePopularityScore();
+    });
+    
+    // Verify that loading was not set and calculateUserPopularity was not called
+    expect(mockSetLoading).not.toHaveBeenCalled();
+    expect(userPopularityModule.calculateUserPopularity).not.toHaveBeenCalled();
+  });
+  
+  // Test to cover the case where calculateUserPopularity returns error (line 172)
+  test('should handle error status from calculateUserPopularity', async () => {
+    const errorMessage = 'Failed to calculate popularity';
+    
+    // Mock calculateUserPopularity to return error status
+    jest.spyOn(userPopularityModule, 'calculateUserPopularity').mockImplementationOnce(() => 
+      Promise.resolve({
+        success: false,
+        error: errorMessage
+      })
+    );
+    
+    // Render hook
+    renderHook(() => useUserPopularity(userId));
+    
+    // Wait for mock setTimeout to call the callback
+    await new Promise(resolve => process.nextTick(resolve));
+    
+    // Verify error was set
+    expect(mockSetError).toHaveBeenCalledWith(errorMessage);
+    
+    // Verify data was not updated
+    expect(mockSetPopularityScore).not.toHaveBeenCalled();
+  });
+
+  // Test to cover the cleanup function when there's no interval (line 172)
+  test('should not call clearInterval in cleanup when autoUpdate is false', async () => {
+    // Render hook with autoUpdate disabled (default)
+    renderHook(() => useUserPopularity(userId));
+    
+    // Verify setInterval was not called
+    expect(setIntervalMock).not.toHaveBeenCalled();
+    
+    // Extract the useEffect cleanup function
+    const cleanupFn = useEffectSpy.mock.calls[0][0]();
+    
+    // Call the cleanup function
+    cleanupFn();
+    
+    // Verify clearInterval was not called
+    expect(clearIntervalMock).not.toHaveBeenCalled();
+  });
+  
+  // Test for the useEffect dependency array (changes in userId and autoUpdate)
+  test('should refetch when userId or autoUpdate changes', async () => {
+    // Render hook with initial values
+    const { rerender } = renderHook(
+      (props) => useUserPopularity(props.userId, props.autoUpdate),
+      { initialProps: { userId, autoUpdate: false } }
+    );
+    
+    // Reset mocks
+    jest.spyOn(userPopularityModule, 'calculateUserPopularity').mockClear();
+    
+    // Change userId
+    rerender({ userId: 'new-user-id', autoUpdate: false });
+    
+    // Verify calculateUserPopularity was called again
+    expect(userPopularityModule.calculateUserPopularity).toHaveBeenCalledWith('new-user-id');
+    
+    // Reset mocks
+    jest.spyOn(userPopularityModule, 'calculateUserPopularity').mockClear();
+    setIntervalMock.mockClear();
+    
+    // Change autoUpdate to true
+    rerender({ userId: 'new-user-id', autoUpdate: true });
+    
+    // Verify interval was set
+    expect(setIntervalMock).toHaveBeenCalled();
   });
 }); 
