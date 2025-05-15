@@ -148,21 +148,27 @@ const SamplesPage = () => {
   // Handle tag selection
   const handleTagSelect = (tag) => {
     if (selectedTags.includes(tag)) {
-      const newTags = selectedTags.filter(t => t !== tag);
-      setSelectedTags(newTags);
-      
-      // Force a refresh after tag is removed
-      console.log("Tag removed, refreshing samples:", tag);
-      // We need to wait for state update before refreshing
-      setTimeout(() => refreshSamples(), 0);
+      // Update state with the new tags array (removing the tag)
+      setSelectedTags(prev => {
+        const newTags = prev.filter(t => t !== tag);
+        
+        // Use the updated state value directly from the callback
+        console.log("Tag removed, refreshing samples:", tag);
+        setTimeout(() => refreshSamples(), 0);
+        
+        return newTags;
+      });
     } else {
-      const newTags = [...selectedTags, tag];
-      setSelectedTags(newTags);
-      
-      // Force a refresh after tag is added
-      console.log("Tag added, refreshing samples:", tag);
-      // We need to wait for state update before refreshing
-      setTimeout(() => refreshSamples(), 0);
+      // Update state with the new tags array (adding the tag)
+      setSelectedTags(prev => {
+        const newTags = [...prev, tag];
+        
+        // Use the updated state value directly from the callback
+        console.log("Tag added, refreshing samples:", tag);
+        setTimeout(() => refreshSamples(), 0);
+        
+        return newTags;
+      });
     }
   };
 
@@ -195,13 +201,17 @@ const SamplesPage = () => {
 
   // Clear all filters
   const clearFilters = () => {
+    // Set all filter states with callbacks
     setSearchTerm('');
     setSelectedTags([]);
     setSortBy('newest');
     
-    // Force immediate refresh
+    // Force immediate refresh only after state updates
     console.log("Clearing all filters and refreshing samples");
-    setTimeout(() => refreshSamples(), 0);
+    // Wait for state updates to complete before refreshing
+    Promise.resolve().then(() => {
+      refreshSamples();
+    });
     
     // Also clear URL params
     navigate('/samples');
@@ -588,9 +598,11 @@ const SamplesPage = () => {
                       variant="ghost"
                       color="whiteAlpha.700"
                       onClick={() => {
-                        const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                        setSelectedTags(newTags);
-                        setTimeout(() => refreshSamples(), 0);
+                        setSelectedTags(prev => {
+                          const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                          setTimeout(() => refreshSamples(), 0);
+                          return newTags;
+                        });
                       }}
                       _hover={{ color: "white", bg: "whiteAlpha.100" }}
                     >
@@ -614,14 +626,20 @@ const SamplesPage = () => {
                             variant={isSelected ? "solid" : "outline"}
                             colorScheme="orange"
                             onClick={() => {
-                              // Remove any previously selected key
-                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key if not already selected, otherwise just remove it
-                              if (!isSelected) {
-                                newTags.push(key);
-                              }
-                              setSelectedTags(newTags);
-                              setTimeout(() => refreshSamples(), 0);
+                              // Update in state callback to ensure proper refresh
+                              setSelectedTags(prev => {
+                                // Remove any previously selected key
+                                const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                                // Add the new key if not already selected, otherwise just remove it
+                                if (!isSelected) {
+                                  newTags.push(key);
+                                }
+                                
+                                // Use callback to ensure we have the latest state
+                                setTimeout(() => refreshSamples(), 0);
+                                
+                                return newTags;
+                              });
                             }}
                             fontWeight="medium"
                             py={1}
@@ -647,14 +665,20 @@ const SamplesPage = () => {
                             variant={isSelected ? "solid" : "outline"}
                             colorScheme="orange"
                             onClick={() => {
-                              // Remove any previously selected key
-                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key if not already selected, otherwise just remove it
-                              if (!isSelected) {
-                                newTags.push(key);
-                              }
-                              setSelectedTags(newTags);
-                              setTimeout(() => refreshSamples(), 0);
+                              // Update in state callback to ensure proper refresh
+                              setSelectedTags(prev => {
+                                // Remove any previously selected key
+                                const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                                // Add the new key if not already selected, otherwise just remove it
+                                if (!isSelected) {
+                                  newTags.push(key);
+                                }
+                                
+                                // Use callback to ensure we have the latest state
+                                setTimeout(() => refreshSamples(), 0);
+                                
+                                return newTags;
+                              });
                             }}
                             fontWeight="medium"
                             py={1}
@@ -1436,9 +1460,11 @@ const SamplesPage = () => {
                       variant="ghost"
                       color="whiteAlpha.700"
                       onClick={() => {
-                        const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                        setSelectedTags(newTags);
-                        setTimeout(() => refreshSamples(), 0);
+                        setSelectedTags(prev => {
+                          const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                          setTimeout(() => refreshSamples(), 0);
+                          return newTags;
+                        });
                       }}
                       _hover={{ color: "white", bg: "whiteAlpha.100" }}
                     >
@@ -1462,14 +1488,20 @@ const SamplesPage = () => {
                             variant={isSelected ? "solid" : "outline"}
                             colorScheme="orange"
                             onClick={() => {
-                              // Remove any previously selected key
-                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key if not already selected, otherwise just remove it
-                              if (!isSelected) {
-                                newTags.push(key);
-                              }
-                              setSelectedTags(newTags);
-                              setTimeout(() => refreshSamples(), 0);
+                              // Update in state callback to ensure proper refresh
+                              setSelectedTags(prev => {
+                                // Remove any previously selected key
+                                const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                                // Add the new key if not already selected, otherwise just remove it
+                                if (!isSelected) {
+                                  newTags.push(key);
+                                }
+                                
+                                // Use callback to ensure we have the latest state
+                                setTimeout(() => refreshSamples(), 0);
+                                
+                                return newTags;
+                              });
                             }}
                             fontWeight="medium"
                             py={1}
@@ -1495,14 +1527,20 @@ const SamplesPage = () => {
                             variant={isSelected ? "solid" : "outline"}
                             colorScheme="orange"
                             onClick={() => {
-                              // Remove any previously selected key
-                              const newTags = selectedTags.filter(tag => !SAMPLE_TAGS.key.includes(tag));
-                              // Add the new key if not already selected, otherwise just remove it
-                              if (!isSelected) {
-                                newTags.push(key);
-                              }
-                              setSelectedTags(newTags);
-                              setTimeout(() => refreshSamples(), 0);
+                              // Update in state callback to ensure proper refresh
+                              setSelectedTags(prev => {
+                                // Remove any previously selected key
+                                const newTags = prev.filter(tag => !SAMPLE_TAGS.key.includes(tag));
+                                // Add the new key if not already selected, otherwise just remove it
+                                if (!isSelected) {
+                                  newTags.push(key);
+                                }
+                                
+                                // Use callback to ensure we have the latest state
+                                setTimeout(() => refreshSamples(), 0);
+                                
+                                return newTags;
+                              });
                             }}
                             fontWeight="medium"
                             py={1}
