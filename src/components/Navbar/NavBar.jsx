@@ -46,7 +46,7 @@ import { auth } from '../../firebase/firebase';
 import { useLogout } from '../../hooks/useLogout';
 import { motion } from 'framer-motion';
 import { useLocation, Link as RouterLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard, FaShieldAlt, FaDatabase } from 'react-icons/fa';
+import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard, FaShieldAlt, FaDatabase, FaList } from 'react-icons/fa';
 import useFindUsers from '../../hooks/useFindUsers';
 import { isAdmin } from '../../utils/adminUtils';
 import { IoMdRefresh } from 'react-icons/io';
@@ -748,6 +748,18 @@ const NavBar = () => {
                           <FaDatabase color="blue.300" style={{ marginRight: '8px' }} />
                           Schema Migration
                         </Link>
+                        <Link 
+                          as={RouterLink} 
+                          to="/admin/featured-collections" 
+                          py={3} 
+                          px={4}
+                          display="flex"
+                          alignItems="center"
+                          _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                        >
+                          <FaList color="purple.300" style={{ marginRight: '8px' }} />
+                          Featured Collections
+                        </Link>
                       </>
                     )}
                     
@@ -927,6 +939,19 @@ const NavBar = () => {
                     >
                       <Box mr={3} fontSize="lg"><FaDatabase /></Box>
                       <Text fontSize="lg">Schema Migration</Text>
+                    </Link>
+                    <Link 
+                      as={RouterLink} 
+                      to="/admin/featured-collections" 
+                      py={3}
+                      px={2}
+                      display="flex"
+                      alignItems="center"
+                      onClick={onClose}
+                      _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                    >
+                      <Box mr={3} fontSize="lg"><FaList /></Box>
+                      <Text fontSize="lg">Featured Collections</Text>
                     </Link>
                   </>
                 )}

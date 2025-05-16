@@ -38,17 +38,28 @@ const useDeleteSample = () => {
 
     try {
       // 1. Delete the document from Firestore
-      const sampleRef = doc(firestore, 'samples', sampleId);
+      // First, determine the collection name - we use 'posts' as that's where samples are stored
+      const collectionName = 'posts';
+      const sampleRef = doc(firestore, collectionName, sampleId);
       await deleteDoc(sampleRef);
+      console.log(`Document deleted from ${collectionName} collection`);
 
       // 2. Delete audio file from Storage if URL exists
       if (audioUrl) {
         try {
-          // Extract the file path from the URL
-          const audioPath = audioUrl.split('?')[0].split('/').slice(7).join('/');
-          if (audioPath) {
-            const audioRef = ref(storage, audioPath);
+          // Extract the storage path from the URL
+          // The URL format is typically https://firebasestorage.googleapis.com/v0/b/[PROJECT_ID].appspot.com/o/[FILE_PATH]?[PARAMS]
+          // We need to extract just the [FILE_PATH] part and decode it
+          const audioUrlObj = new URL(audioUrl);
+          const pathWithQueryString = audioUrlObj.pathname.split('/o/')[1];
+          if (pathWithQueryString) {
+            const decodedPath = decodeURIComponent(pathWithQueryString);
+            console.log('Deleting audio file from path:', decodedPath);
+            const audioRef = ref(storage, decodedPath);
             await deleteObject(audioRef);
+            console.log('Audio file deleted successfully');
+          } else {
+            throw new Error('Could not parse audio file path from URL');
           }
         } catch (audioError) {
           console.error("Error deleting audio file:", audioError);
@@ -59,11 +70,17 @@ const useDeleteSample = () => {
       // 3. Delete image file from Storage if URL exists
       if (imageUrl) {
         try {
-          // Extract the file path from the URL
-          const imagePath = imageUrl.split('?')[0].split('/').slice(7).join('/');
-          if (imagePath) {
-            const imageRef = ref(storage, imagePath);
+          // Extract the storage path using the same logic as for audio
+          const imageUrlObj = new URL(imageUrl);
+          const pathWithQueryString = imageUrlObj.pathname.split('/o/')[1];
+          if (pathWithQueryString) {
+            const decodedPath = decodeURIComponent(pathWithQueryString);
+            console.log('Deleting image file from path:', decodedPath);
+            const imageRef = ref(storage, decodedPath);
             await deleteObject(imageRef);
+            console.log('Image file deleted successfully');
+          } else {
+            throw new Error('Could not parse image file path from URL');
           }
         } catch (imageError) {
           console.error("Error deleting image file:", imageError);

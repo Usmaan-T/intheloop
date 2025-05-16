@@ -61,8 +61,8 @@ import {
 } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { storage } from '../../firebase/firebase';
-import { isAdmin } from '../../utils/adminUtils';
-import { FaUser, FaMusic, FaList, FaChartLine, FaThumbsUp, FaDownload, FaEye, FaClock, FaCalendarAlt } from 'react-icons/fa';
+import { isAdmin, updatePlaylistsWithFeaturedFields } from '../../utils/adminUtils';
+import { FaUser, FaMusic, FaList, FaChartLine, FaThumbsUp, FaDownload, FaEye, FaClock, FaCalendarAlt, FaDatabase, FaStar } from 'react-icons/fa';
 // Import Recharts components
 import {
   LineChart,
@@ -825,6 +825,95 @@ const AdminDashboard = () => {
                   isLoading={isLoading}
                   colorScheme="red"
                 />
+              </SimpleGrid>
+            </Box>
+            
+            {/* Administrative Actions Section */}
+            <Box mt={5}>
+              <Heading size="lg" mb={4} color="white">Administrative Actions</Heading>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5}>
+                <Button 
+                  as="a" 
+                  href="/admin/migration"
+                  size="lg"
+                  height="100px"
+                  colorScheme="blue"
+                  variant="outline"
+                  boxShadow="md"
+                  _hover={{ bg: 'blue.900', transform: 'translateY(-2px)' }}
+                  transition="all 0.2s"
+                >
+                  <VStack>
+                    <Icon as={FaDatabase} fontSize="24px" />
+                    <Text>Schema Migration</Text>
+                  </VStack>
+                </Button>
+                
+                <Button 
+                  as="a" 
+                  href="/admin/featured-collections"
+                  size="lg"
+                  height="100px"
+                  colorScheme="purple"
+                  variant="outline"
+                  boxShadow="md"
+                  _hover={{ bg: 'purple.900', transform: 'translateY(-2px)' }}
+                  transition="all 0.2s"
+                >
+                  <VStack>
+                    <Icon as={FaList} fontSize="24px" />
+                    <Text>Manage Featured Collections</Text>
+                  </VStack>
+                </Button>
+                
+                <Button 
+                  onClick={async () => {
+                    try {
+                      toast({
+                        title: "Processing",
+                        description: "Updating playlists with featured fields...",
+                        status: "info",
+                        duration: 3000,
+                        isClosable: true,
+                      });
+                      
+                      const result = await updatePlaylistsWithFeaturedFields(firestore);
+                      
+                      if (result.success) {
+                        toast({
+                          title: "Success",
+                          description: `Updated ${result.updatedCount} playlists with featured fields.`,
+                          status: "success",
+                          duration: 5000,
+                          isClosable: true,
+                        });
+                      } else {
+                        throw new Error(result.error);
+                      }
+                    } catch (error) {
+                      console.error("Error updating playlists:", error);
+                      toast({
+                        title: "Error",
+                        description: "Failed to update playlists: " + error.message,
+                        status: "error",
+                        duration: 5000,
+                        isClosable: true,
+                      });
+                    }
+                  }}
+                  size="lg"
+                  height="100px"
+                  colorScheme="yellow"
+                  variant="outline"
+                  boxShadow="md"
+                  _hover={{ bg: 'yellow.900', transform: 'translateY(-2px)' }}
+                  transition="all 0.2s"
+                >
+                  <VStack>
+                    <Icon as={FaStar} fontSize="24px" />
+                    <Text>Initialize Featured Fields</Text>
+                  </VStack>
+                </Button>
               </SimpleGrid>
             </Box>
             

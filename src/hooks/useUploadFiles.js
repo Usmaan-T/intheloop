@@ -57,17 +57,32 @@ const useUploadFiles = () => {
     // Start loading state
     setLoading(true);
 
-    const storageRef = ref(storage, `audio/${audioUpload.name}_${uuidv4()}`);
     try {
-      // Upload the file
-      const snapshot = await uploadBytes(storageRef, audioUpload);
-      // Get the download URL of the uploaded file
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      // 1. Upload the audio file
+      const audioStorageRef = ref(storage, `audio/${audioUpload.name}_${uuidv4()}`);
+      const audioSnapshot = await uploadBytes(audioStorageRef, audioUpload);
+      const audioDownloadURL = await getDownloadURL(audioSnapshot.ref);
+      
+      // 2. Upload the cover image if provided
+      let coverImageUrl = null;
+      if (inputs.coverImage) {
+        try {
+          const imageId = uuidv4();
+          const imageFileName = `cover_${imageId}_${inputs.coverImage.name}`;
+          const imageStorageRef = ref(storage, `covers/${imageFileName}`);
+          const imageSnapshot = await uploadBytes(imageStorageRef, inputs.coverImage);
+          coverImageUrl = await getDownloadURL(imageSnapshot.ref);
+          console.log('Cover image uploaded successfully:', coverImageUrl);
+        } catch (imageError) {
+          console.error('Error uploading cover image: ', imageError);
+          // Continue without the cover image
+        }
+      }
 
-      // Create a post object with additional fields
+      // 3. Create a post object with additional fields
       const post = {
         userId: user.uid,
-        audioUrl: downloadURL,
+        audioUrl: audioDownloadURL,
         createdAt: serverTimestamp(),
         likes: 0,
         comments: [],
@@ -76,14 +91,19 @@ const useUploadFiles = () => {
         name: inputs.name,
         tags: inputs.key ? [...(inputs.tags || []), inputs.key] : inputs.tags || []
       };
+      
+      // Add cover image URL if we have one
+      if (coverImageUrl) {
+        post.coverImage = coverImageUrl;
+      }
 
-      // Save the post object in Firestore under the "posts" collection
+      // 4. Save the post object in Firestore under the "posts" collection
       await addDoc(collection(firestore, 'posts'), post);
       
-      // Update the user's streak after successful upload
+      // 5. Update the user's streak after successful upload
       await updateStreakOnUpload();
       
-      console.log('Post saved successfully!');
+      console.log('Post saved successfully!', post);
       return true;
     } catch (error) {
       console.error('Error uploading audio: ', error);
