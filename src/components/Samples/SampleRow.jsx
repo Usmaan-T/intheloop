@@ -29,9 +29,14 @@ import {
   Image,
   Spinner,
   Center,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useToast,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
-import { MdMusicNote, MdPlaylistAdd, MdPlaylistPlay } from 'react-icons/md';
+import { MdMusicNote, MdPlaylistAdd, MdPlaylistPlay, MdMoreVert } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
@@ -60,6 +65,7 @@ const SampleRow = ({ track, onDelete }) => {
   const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
   const { deleteSample, isDeleting } = useDeleteSample();
   const [user] = useAuthState(auth);
+  const toast = useToast();
   
   // For delete confirmation dialog
   const { isOpen: isDeleteDialogOpen, onOpen: onOpenDeleteDialog, onClose: onCloseDeleteDialog } = useDisclosure();
@@ -99,6 +105,13 @@ const SampleRow = ({ track, onDelete }) => {
     onCloseDeleteDialog();
   };
   
+  // Handle remove from playlist
+  const handleRemoveFromPlaylist = () => {
+    if (onDelete) {
+      onDelete(track.id);
+    }
+  };
+  
   // Handle adding to playlist
   const handleAddToPlaylist = async (playlist) => {
     try {
@@ -114,6 +127,7 @@ const SampleRow = ({ track, onDelete }) => {
         waveformData: track.waveformData,
         bpm: track.bpm,
         key: track.key,
+        userId: track.userId,
         addedAt: new Date().toISOString()
       };
       
@@ -303,25 +317,46 @@ const SampleRow = ({ track, onDelete }) => {
               />
             </Tooltip>
             
-            {/* Delete button - Only visible to sample owner */}
-            {isOwner && (
-              <Tooltip label="Delete">
-                <MotionIconButton
-                  icon={<FaTrash />}
-                  aria-label="Delete sample"
-                  size="sm"
-                  isRound
-                  colorScheme="red"
-                  variant="ghost"
-                  onClick={onOpenDeleteDialog}
-                  isLoading={isDeleting}
-                  whileHover={{ scale: 1.1, backgroundColor: "rgba(229, 62, 62, 0.2)" }}
-                  whileTap={{ scale: 0.95 }}
-                  transition="all 0.2s"
-                  color="red.400"
-                />
-              </Tooltip>
-            )}
+            {/* More options - Add menu for removal from playlist */}
+            <Menu placement="bottom-end">
+              <MenuButton
+                as={IconButton}
+                icon={<MdMoreVert />}
+                variant="ghost"
+                size="sm"
+                color="gray.400"
+                _hover={{ color: 'white' }}
+                borderRadius="full"
+                aria-label="More options"
+              />
+              <MenuList bg="gray.800" borderColor="gray.700">
+                {/* Show remove option when onDelete is provided (playlist context) */}
+                {onDelete && (
+                  <MenuItem 
+                    icon={<FaTrash />} 
+                    onClick={handleRemoveFromPlaylist}
+                    bg="transparent"
+                    _hover={{ bg: "red.700" }}
+                    color="white"
+                  >
+                    Remove from playlist
+                  </MenuItem>
+                )}
+                
+                {/* Show delete option for owner */}
+                {isOwner && (
+                  <MenuItem 
+                    icon={<FaTrash />} 
+                    onClick={onOpenDeleteDialog}
+                    bg="transparent"
+                    _hover={{ bg: "red.700" }}
+                    color="white"
+                  >
+                    Delete sample
+                  </MenuItem>
+                )}
+              </MenuList>
+            </Menu>
           </HStack>
 
           {/* Stats indicators - Views, Downloads, Likes */}

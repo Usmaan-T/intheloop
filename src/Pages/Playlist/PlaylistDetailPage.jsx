@@ -15,41 +15,111 @@ import {
   useToast,
   Divider,
   Avatar,
+  useDisclosure,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  IconButton,
+  Tooltip
 } from '@chakra-ui/react';
-import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { firestore } from '../../firebase/firebase';
 import NavBar from '../../components/Navbar/NavBar';
-import { MdMusicNote, MdPlayArrow, MdPause, MdPlaylistPlay } from 'react-icons/md';
-import { FaPlay, FaClock } from 'react-icons/fa';
+import { MdMusicNote, MdPlayArrow, MdPause, MdPlaylistPlay, MdDelete } from 'react-icons/md';
+import { FaPlay, FaClock, FaTrash } from 'react-icons/fa';
 import Footer from '../../components/footer/Footer';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
 import SampleRow from '../../components/Samples/SampleRow';
+import usePlaylistData from '../../hooks/usePlaylistData';
 
 const PlaylistDetailPage = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [collection, setCollection] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [creator, setCreator] = useState(null);
   const [user] = useAuthState(auth);
   const toast = useToast();
+  const { deletePlaylist, isDeleting } = usePlaylistData();
+  
+  // For delete confirmation dialog
+  const { isOpen: isDeleteDialogOpen, onOpen: onOpenDeleteDialog, onClose: onCloseDeleteDialog } = useDisclosure();
+  const cancelRef = React.useRef();
+
+  // Handle deleting the entire playlist
+  const handleDeletePlaylist = async () => {
+    try {
+      const success = await deletePlaylist(id);
+      
+      if (success) {
+        // Navigate back to profile or homepage after deletion
+        navigate('/profilepage');
+      }
+    } catch (error) {
+      console.error("Error deleting playlist:", error);
+    }
+  };
 
   // Handle track deletion from collection
-  const handleDeleteTrack = (trackId) => {
-    // Only update the UI - actual deletion is handled by the useDeleteSample hook
-    if (collection && collection.tracks) {
-      const updatedTracks = collection.tracks.filter(track => track.id !== trackId);
+  const handleDeleteTrack = async (trackId) => {
+    try {
+      if (!user || !collection) return;
+      
+      // Only the collection owner should be able to remove tracks
+      if (user.uid !== collection.userId) {
+        toast({
+          title: "Permission Denied",
+          description: "You can only remove tracks from your own playlists",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      // Get fresh collection data first
+      const collectionRef = doc(firestore, 'playlists', id);
+      const collectionSnapshot = await getDoc(collectionRef);
+      
+      if (!collectionSnapshot.exists()) {
+        throw new Error("Playlist not found");
+      }
+      
+      const playlistData = collectionSnapshot.data();
+      
+      // Filter out the track to remove
+      const updatedTracks = (playlistData.tracks || []).filter(track => track.id !== trackId);
+      
+      // Update the document in Firestore
+      await updateDoc(collectionRef, {
+        tracks: updatedTracks
+      });
+      
+      // Update local state to reflect changes
       setCollection(prev => ({
         ...prev,
         tracks: updatedTracks
       }));
       
       toast({
-        title: "Sample deleted",
-        description: "The sample has been removed",
+        title: "Track removed",
+        description: "The track has been removed from your playlist",
         status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error("Error removing track:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove the track. Please try again.",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
@@ -242,15 +312,30 @@ const PlaylistDetailPage = () => {
                   </Text>
                 </HStack>
                 
-                <Button 
-                  mt={4}
-                  leftIcon={<FaPlay />}
-                  colorScheme="red"
-                  size="lg"
-                  isDisabled={!collection?.tracks?.length}
-                >
-                  Play All
-                </Button>
+                {/* Action buttons */}
+                <HStack spacing={4} mt={4}>
+                  <Button 
+                    leftIcon={<FaPlay />}
+                    colorScheme="red"
+                    size="lg"
+                    isDisabled={!collection?.tracks?.length}
+                  >
+                    Play All
+                  </Button>
+                  
+                  {/* Only show delete button if user owns this playlist */}
+                  {user && collection && user.uid === collection.userId && (
+                    <Tooltip label="Delete playlist">
+                      <IconButton
+                        icon={<FaTrash />}
+                        aria-label="Delete playlist"
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={onOpenDeleteDialog}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
               </VStack>
             </Flex>
           </Container>
@@ -313,6 +398,55 @@ const PlaylistDetailPage = () => {
         </Container>
       </Box>
       <Footer />
+      
+      {/* Delete Playlist Confirmation Dialog */}
+      <AlertDialog
+        isOpen={isDeleteDialogOpen}
+        leastDestructiveRef={cancelRef}
+        onClose={onCloseDeleteDialog}
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent 
+            bg="rgba(20, 20, 30, 0.95)"
+            backdropFilter="blur(10px)"
+            borderColor="whiteAlpha.200"
+            color="white"
+            boxShadow="0 25px 50px -12px rgba(0, 0, 0, 0.6)"
+          >
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Delete Playlist
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure you want to delete "{collection?.name}"? This action cannot be undone and will permanently remove this playlist and its references.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button 
+                ref={cancelRef} 
+                onClick={onCloseDeleteDialog} 
+                variant="outline"
+                _hover={{ bg: "whiteAlpha.100" }}
+                _active={{ bg: "whiteAlpha.200" }}
+              >
+                Cancel
+              </Button>
+              <Button 
+                bgGradient="linear(to-r, red.500, red.600)"
+                _hover={{ 
+                  bgGradient: "linear(to-r, red.600, red.700)",
+                  transform: "translateY(-2px)"
+                }}
+                onClick={handleDeletePlaylist} 
+                ml={3}
+                isLoading={isDeleting}
+              >
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </>
   );
 };
