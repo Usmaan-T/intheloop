@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { firestore } from '../firebase/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/firebase';
@@ -9,6 +9,7 @@ const usePlaylistData = () => {
     const [playlistData, setPlaylistData] = useState(null);
     const [isAdding, setIsAdding] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     const [user] = useAuthState(auth);
     const toast = useToast();
 
@@ -77,6 +78,14 @@ const usePlaylistData = () => {
                 userId: track.userId || 'unknown'
             };
             
+            // Log track data for debugging
+            console.log("Adding track to playlist:", {
+                trackId: track.id,
+                trackName: track.name,
+                trackUserId: track.userId,
+                safeTrackUserId: safeTrack.userId
+            });
+            
             // Add coverImage only if it exists
             if (track.coverImage) {
                 safeTrack.coverImage = track.coverImage;
@@ -118,11 +127,89 @@ const usePlaylistData = () => {
         }
     };
 
+    const deletePlaylist = async (playlistId) => {
+        // Basic validation
+        if (!user) {
+            toast({
+                title: 'Please login',
+                description: 'You need to be logged in to delete a playlist',
+                status: 'error',
+                duration: 3000,
+                isClosable: true
+            });
+            return false;
+        }
+
+        if (!playlistId) {
+            toast({
+                title: 'Error',
+                description: 'Invalid playlist ID',
+                status: 'error',
+                duration: 3000,
+                isClosable: true
+            });
+            return false;
+        }
+
+        setIsDeleting(true);
+
+        try {
+            // First verify the playlist exists and belongs to the current user
+            const playlistRef = doc(firestore, 'playlists', playlistId);
+            const playlistSnap = await getDoc(playlistRef);
+            
+            if (!playlistSnap.exists()) {
+                throw new Error('Playlist not found');
+            }
+            
+            const playlistData = playlistSnap.data();
+            
+            // Check if the current user is the owner
+            if (playlistData.userId !== user.uid) {
+                toast({
+                    title: 'Permission Denied',
+                    description: 'You can only delete your own playlists',
+                    status: 'error',
+                    duration: 3000,
+                    isClosable: true
+                });
+                return false;
+            }
+            
+            // Delete the playlist document
+            await deleteDoc(playlistRef);
+            
+            toast({
+                title: 'Playlist deleted',
+                description: 'Your playlist has been permanently deleted',
+                status: 'success',
+                duration: 3000,
+                isClosable: true
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('Error deleting playlist:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to delete the playlist',
+                status: 'error',
+                duration: 3000,
+                isClosable: true
+            });
+            return false;
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
     return { 
         playlistData, 
         isAdding, 
-        isLoading, 
-        addToPlaylist
+        isLoading,
+        isDeleting,
+        addToPlaylist,
+        deletePlaylist
     };
 };
 

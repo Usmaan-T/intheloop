@@ -15,9 +15,10 @@ import {
   Icon,
   useBreakpointValue,
   useToast,
+  Badge,
 } from '@chakra-ui/react';
 import { Link } from 'react-router-dom';
-import { FaCompass, FaFire, FaChevronRight, FaChartLine, FaHeart, FaUpload } from 'react-icons/fa';
+import { FaCompass, FaFire, FaChevronRight, FaChartLine, FaHeart, FaUpload, FaStar } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
@@ -26,6 +27,7 @@ import SampleRow from '../../components/Samples/SampleRow';
 import HotUserCard from '../../components/User/HotUserCard';
 import { usePopularSamples } from '../../hooks/usePopularSamples';
 import { usePublicPlaylists } from '../../hooks/usePublicPlaylists';
+import { useFeaturedPlaylists } from '../../hooks/useFeaturedPlaylists';
 import usePopularUsers from '../../hooks/usePopularUsers';
 import useFollowedProducersSamples from '../../hooks/useFollowedProducersSamples';
 
@@ -39,10 +41,16 @@ const LoggedInHome = () => {
   const toast = useToast();
 
   const {
-    playlists,
-    loading: playlistsLoading,
-    error: playlistsError,
+    playlists: publicPlaylists,
+    loading: publicPlaylistsLoading,
+    error: publicPlaylistsError,
   } = usePublicPlaylists(6);
+  
+  const {
+    playlists: featuredPlaylists,
+    loading: featuredPlaylistsLoading,
+    error: featuredPlaylistsError,
+  } = useFeaturedPlaylists(6);
 
   const {
     samples: popularSamples,
@@ -474,7 +482,7 @@ const LoggedInHome = () => {
 
           <Divider my={10} borderColor="whiteAlpha.300" />
 
-          {/* User Playlists Section */}
+          {/* Featured Collections Section */}
           <MotionBox
             mb={10}
             initial={{ opacity: 0, y: 20 }}
@@ -489,9 +497,119 @@ const LoggedInHome = () => {
               gap={{ base: 4, sm: 0 }}
             >
               <HStack spacing={3}>
+                <Icon as={FaStar} color="yellow.400" boxSize={6} />
+                <Heading as="h2" size="lg" color="white" fontWeight="semibold">
+                  Featured Collections
+                </Heading>
+              </HStack>
+
+              <Button
+                as={Link}
+                to="/playlists"
+                variant="outline"
+                colorScheme="yellow"
+                rightIcon={<FaChevronRight />}
+                size={{ base: 'md', md: 'md' }}
+                fontWeight="medium"
+                borderColor="yellow.400"
+                _hover={{
+                  bg: 'whiteAlpha.100',
+                  transform: 'translateY(-2px)',
+                  shadow: 'md',
+                }}
+              >
+                View All
+              </Button>
+            </Flex>
+
+            <Box
+              bg="rgba(20, 20, 30, 0.8)"
+              borderRadius="xl"
+              p={{ base: 4, md: 6 }}
+              border="1px solid"
+              borderColor="whiteAlpha.200"
+              boxShadow="0 4px 20px rgba(0,0,0,0.1)"
+              overflow="hidden"
+              position="relative"
+            >
+              {featuredPlaylistsLoading ? (
+                <Flex justify="center" py={10}>
+                  <Spinner size="xl" color="yellow.500" thickness="4px" />
+                </Flex>
+              ) : featuredPlaylistsError ? (
+                <Box bg="red.500" color="white" p={4} borderRadius="md" textAlign="center">
+                  Error loading featured collections
+                </Box>
+              ) : featuredPlaylists.length === 0 ? (
+                <Flex direction="column" align="center" justify="center" py={10}>
+                  <Text color="gray.400" mb={4}>No featured collections available yet</Text>
+                  <Button
+                    as={Link}
+                    to="/playlists"
+                    colorScheme="yellow"
+                    variant="outline"
+                  >
+                    Browse All Collections
+                  </Button>
+                </Flex>
+              ) : (
+                <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 6 }} spacing={6}>
+                  {featuredPlaylists.map((playlist, index) => (
+                    <MotionBox
+                      key={playlist.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.1 * index, duration: 0.5 }}
+                      position="relative"
+                    >
+                      {playlist.isFeatured && (
+                        <Badge
+                          position="absolute"
+                          top={2}
+                          left={2}
+                          zIndex={2}
+                          colorScheme="yellow"
+                          fontSize="xs"
+                          px={2}
+                          py={1}
+                          borderRadius="full"
+                        >
+                          Featured
+                        </Badge>
+                      )}
+                      <Playlist
+                        name={playlist.name}
+                        bio={playlist.description}
+                        image={playlist.coverImage}
+                        color={playlist.colorCode}
+                        privacy={playlist.privacy}
+                        id={playlist.id}
+                      />
+                    </MotionBox>
+                  ))}
+                </SimpleGrid>
+              )}
+            </Box>
+          </MotionBox>
+
+          {/* Explore User Collections Section - Keep this for now but update heading */}
+          <MotionBox
+            mb={10}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6, duration: 0.6 }}
+          >
+            <Flex
+              alignItems="center"
+              justifyContent="space-between"
+              mb={6}
+              flexDirection={{ base: 'column', sm: 'row' }}
+              gap={{ base: 4, sm: 0 }}
+            >
+              <HStack spacing={3}>
                 <Icon as={FaCompass} color="purple.400" boxSize={6} />
                 <Heading as="h2" size="lg" color="white" fontWeight="semibold">
-                  Explore User Playlists
+                  Recent Collections
                 </Heading>
               </HStack>
 
@@ -524,17 +642,17 @@ const LoggedInHome = () => {
               overflow="hidden"
               position="relative"
             >
-              {playlistsLoading ? (
+              {publicPlaylistsLoading ? (
                 <Flex justify="center" py={10}>
                   <Spinner size="xl" color="purple.500" thickness="4px" />
                 </Flex>
-              ) : playlistsError ? (
+              ) : publicPlaylistsError ? (
                 <Box bg="red.500" color="white" p={4} borderRadius="md" textAlign="center">
                   Error loading playlists
                 </Box>
               ) : (
                 <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 6 }} spacing={6}>
-                  {playlists.map((playlist, index) => (
+                  {publicPlaylists.map((playlist, index) => (
                     <MotionBox
                       key={playlist.id}
                       initial={{ opacity: 0, y: 20 }}

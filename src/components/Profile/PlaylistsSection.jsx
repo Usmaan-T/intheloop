@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Box, Flex, Heading, IconButton, Grid, GridItem, Text, Spinner, Center, 
-  Alert, AlertIcon, AlertTitle, AlertDescription
+  Alert, AlertIcon, AlertTitle, AlertDescription, Button
 } from '@chakra-ui/react';
 import { AddIcon } from '@chakra-ui/icons';
 import Playlist from '../Playlist/Playlist';
@@ -47,8 +47,8 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick, showHe
       {/* Only show header if showHeader is true */}
       {showHeader && (
         <Flex justify="space-between" align="center" mb={4}>
-          <Heading as="h2" size="xl" color="white">
-            My Playlists
+          <Heading as="h2" fontSize="2xl" fontWeight="bold" mb={4}>
+            Collections
           </Heading>
           <IconButton
             icon={<AddIcon />}
@@ -100,7 +100,8 @@ const PlaylistsSection = ({ playlists = [], isLoading, error, onAddClick, showHe
                       image={playlist.coverImage || playlist.image}
                       color={playlist.colorCode}
                       privacy={playlist.privacy}
-                      id={playlist.id}  // Make sure to pass the id here
+                      id={playlist.id}
+                      userId={playlist.userId} // Pass the userId prop for owner check
                     />
                   </GridItem>
                 ))}

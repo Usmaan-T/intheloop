@@ -12,6 +12,7 @@ import CreatePlaylist from './components/Playlist/CreatePlaylist'
 import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
 import AdminDashboard from './Pages/Admin/AdminDashboard'
+import ManageFeaturedCollections from './components/Admin/ManageFeaturedCollections'
 import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
 import UserProfilePage from './Pages/User/UserProfilePage'
@@ -73,8 +74,9 @@ const App = () => {
       <Route path='/samples' element={<SamplesPage />} />
       <Route path='/daily' element={<DailyPage />} />
       <Route path='/createplaylist' element={<CreatePlaylist />} />
-      <Route path='/admin/migration' element={<SchemaMigrationPage />} />
-      <Route path='/admin/dashboard' element={<AdminDashboard />} />
+      <Route path='/admin/migration' element={isAdmin(user) ? <SchemaMigrationPage /> : <Navigate to="/" />} />
+      <Route path='/admin/dashboard' element={isAdmin(user) ? <AdminDashboard /> : <Navigate to="/" />} />
+      <Route path='/admin/featured-collections' element={isAdmin(user) ? <ManageFeaturedCollections /> : <Navigate to="/" />} />
       <Route path='/playlist/:id' element={<PlaylistDetailPage />} />
       <Route path="/user/:userId" element={<UserProfilePage />} />
     </Routes>

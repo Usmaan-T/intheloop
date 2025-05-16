@@ -46,9 +46,10 @@ import { auth } from '../../firebase/firebase';
 import { useLogout } from '../../hooks/useLogout';
 import { motion } from 'framer-motion';
 import { useLocation, Link as RouterLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard, FaShieldAlt, FaDatabase } from 'react-icons/fa';
+import { FaHome, FaCompass, FaHeadphones, FaUpload, FaUser, FaCalendarDay, FaUsers, FaHistory, FaTimes, FaMicrophone, FaUserAlt, FaTrash, FaKeyboard, FaShieldAlt, FaDatabase, FaList } from 'react-icons/fa';
 import useFindUsers from '../../hooks/useFindUsers';
 import { isAdmin } from '../../utils/adminUtils';
+import { IoMdRefresh } from 'react-icons/io';
 
 const MotionBox = motion(Box);
 const MotionFlex = motion(Flex);
@@ -106,22 +107,45 @@ const NavBar = () => {
 
   // Handle search input with debounce
   const handleSearchInput = (e) => {
-    const value = e.target.value;
-    setSearchValue(value);
-    setActiveIndex(-1);
-    
-    // Clear any existing timeout
-    if (searchTimeoutRef.current) {
-      clearTimeout(searchTimeoutRef.current);
-    }
-    
-    // Set a new timeout for searching
-    if (value.length >= 2) {
-      searchTimeoutRef.current = setTimeout(() => {
-        searchUsers(value);
-      }, 300);
-    } else if (value.length === 0) {
-      clearSearch();
+    try {
+      const value = e.target.value;
+      setSearchValue(value);
+      setActiveIndex(-1);
+      
+      // Clear any existing timeout
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      
+      // Set a new timeout for searching
+      if (value.length >= 2) {
+        // Show the spinner immediately to indicate search is happening
+        setIsSearchFocused(true);
+        
+        // Use a shorter timeout for a more responsive experience
+        searchTimeoutRef.current = setTimeout(() => {
+          try {
+            // Make multiple search attempts for better reliability
+            searchUsers(value).catch(err => {
+              console.error("Search attempt failed:", err);
+              
+              // Retry once after a short delay if first attempt fails
+              setTimeout(() => {
+                searchUsers(value).catch(err => {
+                  console.error("Retry search also failed:", err);
+                });
+              }, 500);
+            });
+          } catch (err) {
+            console.error("Error during search:", err);
+          }
+        }, 250);
+      } else if (value.length === 0) {
+        clearSearch();
+      }
+    } catch (err) {
+      console.error("Error in handleSearchInput:", err);
+      // Don't let errors in search break the UI
     }
   };
 
@@ -327,14 +351,22 @@ const NavBar = () => {
                         onClick={startVoiceSearch}
                       />
                     </Tooltip>
-                    <Tooltip label="Search tips" placement="top" hasArrow>
+                    <Tooltip 
+                      label={
+                        searchError 
+                          ? `Error: ${searchError}` 
+                          : "Search tips"
+                      } 
+                      placement="top" 
+                      hasArrow
+                    >
                       <IconButton
                         aria-label="Search help"
                         icon={<FaKeyboard />}
                         size="sm"
                         variant="ghost"
-                        color="whiteAlpha.700" 
-                        _hover={{ color: "brand.400" }}
+                        color={searchError ? "red.400" : "whiteAlpha.700"} 
+                        _hover={{ color: searchError ? "red.300" : "brand.400" }}
                         onClick={() => setShowSearchHelp(!showSearchHelp)}
                       />
                     </Tooltip>
@@ -404,14 +436,24 @@ const NavBar = () => {
                   <Text>Searching...</Text>
                 </Center>
               ) : searchError ? (
-                <Box p={4} color="red.300">
-                  Error: {searchError}
+                <Box p={4}>
+                  <Text color="red.300" mb={2}>Error searching users</Text>
+                  <Button 
+                    size="sm" 
+                    colorScheme="red" 
+                    variant="outline" 
+                    onClick={() => searchUsers(searchValue)}
+                    leftIcon={<IoMdRefresh />}
+                    width="full"
+                  >
+                    Retry
+                  </Button>
                 </Box>
               ) : users.length > 0 ? (
                 <List spacing={0}>
                   {users.map((user, index) => (
                     <ListItem
-                      key={user.id}
+                      key={user.id || index}
                       bg={index === activeIndex ? "whiteAlpha.100" : "transparent"}
                       _hover={{ bg: "whiteAlpha.100" }}
                       transition="background 0.2s"
@@ -426,7 +468,7 @@ const NavBar = () => {
                         <Avatar 
                           size="sm" 
                           src={user.photoURL} 
-                          name={user.username || user.displayName}
+                          name={user.username || user.displayName || "User"}
                           mr={3}
                           border="2px solid"
                           borderColor={index === activeIndex ? "brand.500" : "transparent"}
@@ -450,10 +492,35 @@ const NavBar = () => {
                       </Box>
                     </ListItem>
                   ))}
+                  <Box
+                    p={3}
+                    borderTop="1px solid"
+                    borderColor="whiteAlpha.100"
+                  >
+                    <Button
+                      size="xs"
+                      width="full"
+                      variant="ghost"
+                      onClick={() => searchUsers(searchValue)}
+                      leftIcon={<IoMdRefresh />}
+                      color="brand.400"
+                    >
+                      Refresh Results
+                    </Button>
+                  </Box>
                 </List>
               ) : searchValue.length >= 2 ? (
                 <Box p={4} textAlign="center">
-                  <Text>No users found matching "{searchValue}"</Text>
+                  <Text mb={3}>No users found matching "{searchValue}"</Text>
+                  <Button 
+                    size="sm" 
+                    colorScheme="brand" 
+                    variant="outline" 
+                    onClick={() => searchUsers(searchValue)}
+                    leftIcon={<IoMdRefresh />}
+                  >
+                    Try Again
+                  </Button>
                 </Box>
               ) : recentSearches.length > 0 ? (
                 <Box>
@@ -681,6 +748,18 @@ const NavBar = () => {
                           <FaDatabase color="blue.300" style={{ marginRight: '8px' }} />
                           Schema Migration
                         </Link>
+                        <Link 
+                          as={RouterLink} 
+                          to="/admin/featured-collections" 
+                          py={3} 
+                          px={4}
+                          display="flex"
+                          alignItems="center"
+                          _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                        >
+                          <FaList color="purple.300" style={{ marginRight: '8px' }} />
+                          Featured Collections
+                        </Link>
                       </>
                     )}
                     
@@ -860,6 +939,19 @@ const NavBar = () => {
                     >
                       <Box mr={3} fontSize="lg"><FaDatabase /></Box>
                       <Text fontSize="lg">Schema Migration</Text>
+                    </Link>
+                    <Link 
+                      as={RouterLink} 
+                      to="/admin/featured-collections" 
+                      py={3}
+                      px={2}
+                      display="flex"
+                      alignItems="center"
+                      onClick={onClose}
+                      _hover={{ bg: "whiteAlpha.100", textDecoration: 'none' }}
+                    >
+                      <Box mr={3} fontSize="lg"><FaList /></Box>
+                      <Text fontSize="lg">Featured Collections</Text>
                     </Link>
                   </>
                 )}

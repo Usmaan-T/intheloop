@@ -36,16 +36,50 @@ export const calculateUserPopularity = async (userId) => {
       allTime: 0
     };
     
-    // Sum up popularity scores from all tracks
+    // Get current date info for filtering
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const weekNumber = getWeekNumber(now);
+    const weekString = `${now.getFullYear()}-W${weekNumber}`;
+    const monthString = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    // Sum up popularity scores from all tracks with proper time filtering
     snapshot.forEach((doc) => {
       const trackData = doc.data();
       const scores = trackData.popularityScores || {};
+      const stats = trackData.stats || { 
+        views: 0, 
+        likes: 0, 
+        downloads: 0, 
+        dailyStats: {}, 
+        weeklyStats: {}, 
+        monthlyStats: {} 
+      };
       
-      // Add the popularity score for each time period
-      totalPopularity.daily += scores.daily || 0;
-      totalPopularity.weekly += scores.weekly || 0;
-      totalPopularity.monthly += scores.monthly || 0;
+      // Always add all-time score
       totalPopularity.allTime += scores.allTime || 0;
+      
+      // Only count today's stats for daily score
+      const dailyStats = stats.dailyStats?.[today] || { views: 0, likes: 0, downloads: 0 };
+      totalPopularity.daily += calculateScore(dailyStats);
+      
+      // Only count current week's stats for weekly score
+      let weeklyScore = 0;
+      Object.keys(stats.weeklyStats || {}).forEach(key => {
+        if (key === weekString) {
+          weeklyScore += calculateScore(stats.weeklyStats[key]);
+        }
+      });
+      totalPopularity.weekly += weeklyScore;
+      
+      // Only count current month's stats for monthly score
+      let monthlyScore = 0;
+      Object.keys(stats.monthlyStats || {}).forEach(key => {
+        if (key === monthString) {
+          monthlyScore += calculateScore(stats.monthlyStats[key]);
+        }
+      });
+      totalPopularity.monthly += monthlyScore;
     });
     
     // Update the user document with the calculated popularity scores
@@ -66,6 +100,28 @@ export const calculateUserPopularity = async (userId) => {
       error: error.message 
     };
   }
+};
+
+/**
+ * Helper function to calculate a score from stats
+ */
+const calculateScore = (stats) => {
+  const likes = stats.likes || 0;
+  const downloads = stats.downloads || 0;
+  const views = stats.views || 0;
+  
+  return (likes * 5) + (downloads * 3) + views;
+};
+
+/**
+ * Helper function to get ISO week number
+ */
+const getWeekNumber = (date) => {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 };
 
 /**

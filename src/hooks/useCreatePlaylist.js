@@ -13,12 +13,12 @@ const useCreatePlaylist = () => {
 
   const createPlaylist = async () => {
     if (!user) {
-      setUploadError('You must be logged in to create a playlist');
+      setUploadError('You must be logged in to create a collection');
       return false;
     }
 
     if (!inputs.name) {
-      setUploadError('Playlist name is required');
+      setUploadError('Collection name is required');
       return false;
     }
 
@@ -58,14 +58,14 @@ const useCreatePlaylist = () => {
 
       // Add to Firestore
       const playlistRef = await addDoc(collection(firestore, 'playlists'), playlistData);
-      console.log('Playlist created with ID:', playlistRef.id);
+      console.log('Collection created with ID:', playlistRef.id);
       
       // Reset form
       setInputs({ name: '', description: '', privacy: 'public' });
       setLoading(false);
       return true;
     } catch (error) {
-      console.error('Error creating playlist:', error);
+      console.error('Error creating collection:', error);
       setUploadError(error.message);
       setLoading(false);
       return false;

@@ -16,8 +16,27 @@ import {
   AlertDialogContent,
   AlertDialogOverlay,
   Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalCloseButton,
+  ModalBody,
+  ModalFooter,
+  List,
+  ListItem,
+  VStack,
+  Image,
+  Spinner,
+  Center,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  useToast,
 } from '@chakra-ui/react';
 import { FaPlus, FaHeart, FaPlay, FaPause, FaDownload, FaEye, FaTrash } from 'react-icons/fa';
+import { MdMusicNote, MdPlaylistAdd, MdPlaylistPlay, MdMoreVert } from 'react-icons/md';
 import { motion } from 'framer-motion';
 import Waveform from '../Waveform/Waveform';
 import useLikeSample from '../../hooks/useLikeSample';
@@ -25,8 +44,11 @@ import useAudioPlayback from '../../hooks/useAudioPlayback';
 import useDownloadTrack from '../../hooks/useDownloadTrack';
 import useTrackSampleView from '../../hooks/useTrackSampleView';
 import useDeleteSample from '../../hooks/useDeleteSample';
+import useUserPlaylists from '../../hooks/useUserPlaylists';
+import usePlaylistData from '../../hooks/usePlaylistData';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebase';
+import { useNavigate } from 'react-router-dom';
 import ArtistInfo from './SampleRow/ArtistInfo';
 import SampleCover from './SampleRow/SampleCover';
 import TagsList from './SampleRow/TagsList';
@@ -36,16 +58,25 @@ const MotionFlex = motion(Flex);
 const MotionIconButton = motion(IconButton);
 
 const SampleRow = ({ track, onDelete }) => {
+  const navigate = useNavigate();
   // Use our custom hooks for audio playback and download
   const { audioRef, isPlaying, handlePlayToggle, handleAudioEnd } = useAudioPlayback(track.audioUrl);
   const { downloadTrack, downloadLoading } = useDownloadTrack();
   const { isLiked, likeCount, toggleLike, isLoading: likeLoading } = useLikeSample(track.id);
   const { deleteSample, isDeleting } = useDeleteSample();
   const [user] = useAuthState(auth);
+  const toast = useToast();
   
   // For delete confirmation dialog
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isDeleteDialogOpen, onOpen: onOpenDeleteDialog, onClose: onCloseDeleteDialog } = useDisclosure();
   const cancelRef = React.useRef();
+  
+  // For playlist modal
+  const { isOpen: isPlaylistModalOpen, onOpen: onOpenPlaylistModal, onClose: onClosePlaylistModal } = useDisclosure();
+  
+  // For playlists functionality
+  const { playlists, isLoading: playlistsLoading } = useUserPlaylists(user?.uid);
+  const { addToPlaylist, isAdding } = usePlaylistData();
   
   // Track when this sample is viewed
   useTrackSampleView(track.id);
@@ -71,7 +102,58 @@ const SampleRow = ({ track, onDelete }) => {
       onDelete(track.id);
     }
     
-    onClose();
+    onCloseDeleteDialog();
+  };
+  
+  // Handle remove from playlist
+  const handleRemoveFromPlaylist = () => {
+    if (onDelete) {
+      onDelete(track.id);
+    }
+  };
+  
+  // Handle adding to playlist
+  const handleAddToPlaylist = async (playlist) => {
+    try {
+      console.log("Adding track to collection:", playlist.name);
+      
+      // If we don't have a trackId, use track UID
+      const trackToAdd = {
+        id: track.id,
+        name: track.name,
+        audioUrl: track.audioUrl,
+        coverImage: track.coverImage,
+        duration: track.duration,
+        waveformData: track.waveformData,
+        bpm: track.bpm,
+        key: track.key,
+        userId: track.userId,
+        addedAt: new Date().toISOString()
+      };
+      
+      // Call the addToPlaylist function from the hook
+      const success = await addToPlaylist(trackToAdd, playlist);
+      
+      if (success) {
+        toast({
+          title: "Added to collection",
+          description: `Track added to ${playlist.name}`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        onClosePlaylistModal();
+      }
+    } catch (error) {
+      console.error("Error in handleAddToPlaylist:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add track to collection",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
   
   return (
@@ -198,21 +280,22 @@ const SampleRow = ({ track, onDelete }) => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 transition="all 0.2s"
+                color={isLiked ? undefined : "white"}
               />
             </Tooltip>
             
             {/* Add to playlist button */}
-            <Tooltip label="Add to playlist">
-              <MotionIconButton
-                icon={<FaPlus />}
-                aria-label="Add to playlist"
-                size="sm"
-                isRound
-                colorScheme="whiteAlpha"
-                variant="ghost"
-                whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
-                whileTap={{ scale: 0.95 }}
-                transition="all 0.2s"
+            <Tooltip label="Add to collection">
+              <IconButton
+                aria-label="Add to collection"
+                icon={<MdPlaylistAdd />}
+                size="md"
+                variant="ghost" 
+                color="purple.400"
+                borderRadius="full"
+                mr={1}
+                onClick={onOpenPlaylistModal}
+                isDisabled={!user}
               />
             </Tooltip>
             
@@ -230,27 +313,74 @@ const SampleRow = ({ track, onDelete }) => {
                 whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                 whileTap={{ scale: 0.95 }}
                 transition="all 0.2s"
+                color="white"
               />
             </Tooltip>
             
-            {/* Delete button - Only visible to sample owner */}
-            {isOwner && (
-              <Tooltip label="Delete">
-                <MotionIconButton
-                  icon={<FaTrash />}
-                  aria-label="Delete sample"
-                  size="sm"
-                  isRound
-                  colorScheme="red"
-                  variant="ghost"
-                  onClick={onOpen}
-                  isLoading={isDeleting}
-                  whileHover={{ scale: 1.1, backgroundColor: "rgba(229, 62, 62, 0.2)" }}
-                  whileTap={{ scale: 0.95 }}
-                  transition="all 0.2s"
-                />
-              </Tooltip>
-            )}
+            {/* More options - Add menu for removal from playlist */}
+            <Menu placement="bottom-end">
+              <MenuButton
+                as={IconButton}
+                icon={<MdMoreVert />}
+                variant="ghost"
+                size="sm"
+                color="gray.400"
+                _hover={{ color: 'white' }}
+                borderRadius="full"
+                aria-label="More options"
+              />
+              <MenuList bg="gray.800" borderColor="gray.700">
+                {/* Show remove option when onDelete is provided (playlist context) */}
+                {onDelete && (
+                  <MenuItem 
+                    icon={<FaTrash />} 
+                    onClick={handleRemoveFromPlaylist}
+                    bg="transparent"
+                    _hover={{ bg: "red.700" }}
+                    color="white"
+                  >
+                    Remove from playlist
+                  </MenuItem>
+                )}
+                
+                {/* Show delete option for owner */}
+                {isOwner && (
+                  <MenuItem 
+                    icon={<FaTrash />} 
+                    onClick={onOpenDeleteDialog}
+                    bg="transparent"
+                    _hover={{ bg: "red.700" }}
+                    color="white"
+                  >
+                    Delete sample
+                  </MenuItem>
+                )}
+              </MenuList>
+            </Menu>
+          </HStack>
+
+          {/* Stats indicators - Views, Downloads, Likes */}
+          <HStack spacing={4} color="white">
+            <Tooltip label={`${viewCount} ${viewCount === 1 ? 'view' : 'views'}`}>
+              <Flex align="center">
+                <Icon as={FaEye} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{viewCount}</Text>
+              </Flex>
+            </Tooltip>
+            
+            <Tooltip label={`${downloadCount} ${downloadCount === 1 ? 'download' : 'downloads'}`}>
+              <Flex align="center">
+                <Icon as={FaDownload} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{downloadCount}</Text>
+              </Flex>
+            </Tooltip>
+            
+            <Tooltip label={`${likeCount} ${likeCount === 1 ? 'like' : 'likes'}`}>
+              <Flex align="center">
+                <Icon as={FaHeart} mr={1} />
+                <Text fontSize="xs" fontWeight="medium">{likeCount}</Text>
+              </Flex>
+            </Tooltip>
           </HStack>
         </Flex>
       </Flex>
@@ -258,26 +388,7 @@ const SampleRow = ({ track, onDelete }) => {
       {/* Add popularity metrics display */}
       <Flex px={4} pb={2} justifyContent="flex-end" color="gray.400" fontSize="xs">
         <HStack spacing={4}>
-          <Tooltip label="Views">
-            <HStack spacing={1}>
-              <Icon as={FaEye} />
-              <Text>{viewCount}</Text>
-            </HStack>
-          </Tooltip>
-          
-          <Tooltip label="Downloads">
-            <HStack spacing={1}>
-              <Icon as={FaDownload} />
-              <Text>{downloadCount}</Text>
-            </HStack>
-          </Tooltip>
-          
-          <Tooltip label="Likes">
-            <HStack spacing={1}>
-              <Icon as={FaHeart} color="brand.400" />
-              <Text>{likeCount}</Text>
-            </HStack>
-          </Tooltip>
+
 
           {track.popularityScores && (
             <Tooltip label="Popularity Score">
@@ -299,7 +410,7 @@ const SampleRow = ({ track, onDelete }) => {
                     borderRadius="full"
                     px={2}
                   >
-                    +{Math.round(track.popularityScores.daily)}
+                    +{Math.round(track.popularityScores.weekly)}
                   </Badge>
                 )}
               </HStack>
@@ -320,7 +431,7 @@ const SampleRow = ({ track, onDelete }) => {
         <Waveform 
           audioUrl={track.audioUrl} 
           options={{
-            waveColor: 'rgba(255, 255, 255, 0.4)',
+            waveColor: 'rgb(255, 255, 255)',
             progressColor: isLiked ? 'rgba(229, 62, 62, 0.8)' : 'rgba(255, 255, 255, 0.8)',
             cursorColor: 'rgba(229, 62, 62, 0.8)',
             barWidth: 2,
@@ -338,9 +449,9 @@ const SampleRow = ({ track, onDelete }) => {
       
       {/* Delete Confirmation Dialog */}
       <AlertDialog
-        isOpen={isOpen}
+        isOpen={isDeleteDialogOpen}
         leastDestructiveRef={cancelRef}
-        onClose={onClose}
+        onClose={onCloseDeleteDialog}
       >
         <AlertDialogOverlay>
           <AlertDialogContent 
@@ -361,7 +472,7 @@ const SampleRow = ({ track, onDelete }) => {
             <AlertDialogFooter>
               <Button 
                 ref={cancelRef} 
-                onClick={onClose} 
+                onClick={onCloseDeleteDialog} 
                 variant="outline"
                 _hover={{ bg: "whiteAlpha.100" }}
                 _active={{ bg: "whiteAlpha.200" }}
@@ -384,6 +495,87 @@ const SampleRow = ({ track, onDelete }) => {
           </AlertDialogContent>
         </AlertDialogOverlay>
       </AlertDialog>
+      
+      {/* Playlist modal */}
+      <Modal isOpen={isPlaylistModalOpen} onClose={onClosePlaylistModal} size="md">
+        <ModalOverlay backdropFilter="blur(5px)" />
+        <ModalContent bg="darkBg.800" border="1px solid" borderColor="whiteAlpha.200">
+          <ModalHeader fontSize="xl" fontWeight="bold">Add to Collection</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            {playlistsLoading ? (
+              <Center py={4}>
+                <Spinner size="md" color="purple.400" />
+              </Center>
+            ) : playlists && playlists.length > 0 ? (
+              <List spacing={2}>
+                {playlists.map(playlist => (
+                  <ListItem key={playlist.id}>
+                    <Flex 
+                      p={3} 
+                      borderRadius="md" 
+                      alignItems="center" 
+                      border="1px solid"
+                      borderColor="whiteAlpha.200"
+                      cursor="pointer"
+                      onClick={() => handleAddToPlaylist(playlist)}
+                      _hover={{ bg: "rgba(255, 255, 255, 0.05)" }}
+                      transition="all 0.2s ease"
+                    >
+                      <Box 
+                        w="40px" 
+                        h="40px" 
+                        borderRadius="md" 
+                        mr={3}
+                        bg={playlist.coverImage ? "transparent" : "purple.500"}
+                        overflow="hidden"
+                      >
+                        {playlist.coverImage ? (
+                          <Image 
+                            src={playlist.coverImage} 
+                            alt={playlist.name} 
+                            objectFit="cover"
+                            w="full"
+                            h="full"
+                          />
+                        ) : (
+                          <Center h="full" color="white" fontSize="lg">
+                            <MdPlaylistPlay />
+                          </Center>
+                        )}
+                      </Box>
+                      <Box flex="1">
+                        <Text fontWeight="medium" color="white">{playlist.name}</Text>
+                        <Text fontSize="xs" color="whiteAlpha.700">
+                          {playlist.tracks?.length || 0} tracks
+                        </Text>
+                      </Box>
+                    </Flex>
+                  </ListItem>
+                ))}
+              </List>
+            ) : (
+              <VStack spacing={4} py={4}>
+                <Text color="white">You don't have any collections yet</Text>
+                <Button 
+                  colorScheme="purple" 
+                  onClick={() => {
+                    onClosePlaylistModal();
+                    navigate('/createplaylist');
+                  }}
+                >
+                  Create Collection
+                </Button>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="outline" colorScheme="purple" onClick={onClosePlaylistModal}>
+              Cancel
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </MotionBox>
   );
 };

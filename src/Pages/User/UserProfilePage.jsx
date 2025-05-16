@@ -12,6 +12,7 @@ import {
   Tab,
   TabPanels,
   TabPanel,
+  Center,
 } from '@chakra-ui/react';
 import NavBar from '../../components/Navbar/NavBar';
 import Footer from '../../components/footer/Footer';
@@ -112,7 +113,7 @@ const UserProfilePage = () => {
           <Tabs colorScheme="red" variant="line">
             <TabList borderBottomColor="whiteAlpha.200">
               <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Samples</Tab>
-              <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Playlists</Tab>
+              <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Collections</Tab>
               <Tab color="gray.300" _selected={{ color: "white", borderColor: "red.500" }}>Likes</Tab>
             </TabList>
             
@@ -145,7 +146,7 @@ const UserProfilePage = () => {
                 </Box>
               </TabPanel>
               
-              {/* Playlists Tab */}
+              {/* Collections Tab */}
               <TabPanel px={0}>
                 <Box
                   bg="rgba(20, 20, 30, 0.8)"
@@ -155,21 +156,20 @@ const UserProfilePage = () => {
                   borderColor="whiteAlpha.200"
                 >
                   {playlistsLoading ? (
-                    <Flex justify="center" py={10}>
+                    <Center py={12}>
                       <Spinner size="xl" color="red.500" thickness="4px" />
-                    </Flex>
+                    </Center>
                   ) : playlistsError ? (
-                    <Text color="red.300" textAlign="center">Error loading playlists</Text>
+                    <Text color="red.300" textAlign="center">Error loading collections</Text>
                   ) : playlists && playlists.length > 0 ? (
-                    <PlaylistsSection 
+                    <PlaylistsSection
                       playlists={playlists}
-                      isLoading={false}
-                      error={null}
-                      onAddClick={null}
-                      showHeader={false}
+                      isOwner={false}
+                      currentUser={user}
+                      userId={userId}
                     />
                   ) : (
-                    <Text color="gray.400" textAlign="center">No playlists yet</Text>
+                    <Text color="gray.400" textAlign="center">No collections yet</Text>
                   )}
                 </Box>
               </TabPanel>

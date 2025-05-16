@@ -1,3 +1,8 @@
+// Add TextEncoder and TextDecoder polyfills
+const { TextEncoder, TextDecoder } = require('util');
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Add Jest extended matchers
 import '@testing-library/jest-dom';
 
