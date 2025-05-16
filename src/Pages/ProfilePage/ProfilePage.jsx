@@ -27,10 +27,12 @@ import CreatePlaylist from '../../components/Playlist/CreatePlaylist';
 import EditProfileModal from '../../components/Profile/EditProfileModal';
 import PlaylistsSection from '../../components/Profile/PlaylistsSection';
 import TracksSection from '../../components/Profile/TracksSection';
+import TracksSectionPaginated from '../../components/Profile/TracksSectionPaginated';
 import ProfileHeader from '../../components/User/ProfileHeader';
 import StreakDisplay from '../../components/Profile/StreakDisplay';
 import useProfileData from '../../hooks/useProfileData';
 import useUserTracks from '../../hooks/useUserTracks';
+import useUserPaginatedTracks from '../../hooks/useUserPaginatedTracks';
 import useUserPlaylists from '../../hooks/useUserPlaylists';
 import useUserPopularity from '../../hooks/useUserPopularity';
 import useUserLikes from '../../hooks/useUserLikes';
@@ -295,12 +297,7 @@ const ProfilePage = () => {
                           Error loading your samples
                         </Text>
                       ) : tracks && tracks.length > 0 ? (
-                        <TracksSection 
-                          tracks={tracks}
-                          isLoading={false}
-                          error={null}
-                          showHeader={false}
-                        />
+                        <SamplesSections userId={user?.uid} />
                       ) : (
                         <Flex 
                           direction="column" 
@@ -483,6 +480,50 @@ const ProfilePage = () => {
       </Box>
       <Footer />
     </>
+  );
+};
+
+const SamplesSections = ({ userId }) => {
+  // Fetch most recent tracks (default sorting by createdAt desc)
+  const { 
+    tracks: recentTracks, 
+    isLoading: recentLoading, 
+    error: recentError,
+    hasMore: recentHasMore,
+    loadMore: loadMoreRecent
+  } = useUserPaginatedTracks(userId, 'newest', 3);
+
+  // Fetch most popular tracks
+  const { 
+    tracks: popularTracks, 
+    isLoading: popularLoading, 
+    error: popularError,
+    hasMore: popularHasMore,
+    loadMore: loadMorePopular
+  } = useUserPaginatedTracks(userId, 'popular', 3);
+
+  return (
+    <VStack spacing={8} align="stretch">
+      {/* Recent Tracks Section */}
+      <TracksSectionPaginated 
+        title="Most Recent"
+        tracks={recentTracks}
+        isLoading={recentLoading}
+        error={recentError}
+        hasMore={recentHasMore}
+        loadMore={loadMoreRecent}
+      />
+      
+      {/* Popular Tracks Section */}
+      <TracksSectionPaginated 
+        title="Most Popular"
+        tracks={popularTracks}
+        isLoading={popularLoading}
+        error={popularError}
+        hasMore={popularHasMore}
+        loadMore={loadMorePopular}
+      />
+    </VStack>
   );
 };
 
