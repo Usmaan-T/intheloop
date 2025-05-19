@@ -32,7 +32,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/14</span>
+                <span class='fraction'>0/20</span>
             </div>
         
             
@@ -146,7 +146,9 @@
 <a name='L81'></a><a href='#L81'>81</a>
 <a name='L82'></a><a href='#L82'>82</a>
 <a name='L83'></a><a href='#L83'>83</a>
-<a name='L84'></a><a href='#L84'>84</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -164,21 +166,6 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -186,6 +173,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -211,6 +214,7 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -243,6 +247,7 @@ import CreatePlaylist from './components/Playlist/CreatePlaylist'
 import ExplorePage from './Pages/Explore/ExplorePage'
 import SchemaMigrationPage from './Pages/Admin/SchemaMigrationPage'
 import AdminDashboard from './Pages/Admin/AdminDashboard'
+import ManageFeaturedCollections from './components/Admin/ManageFeaturedCollections'
 import PlaylistDetailPage from './Pages/Playlist/PlaylistDetailPage'
 import LoggedInHome from './Pages/Home/LoggedInHome'
 import UserProfilePage from './Pages/User/UserProfilePage'
@@ -304,8 +309,9 @@ const App = <span class="cstat-no" title="statement not covered" ><span class="f
       &lt;Route path='/samples' element={&lt;SamplesPage /&gt;} /&gt;
       &lt;Route path='/daily' element={&lt;DailyPage /&gt;} /&gt;
       &lt;Route path='/createplaylist' element={&lt;CreatePlaylist /&gt;} /&gt;
-      &lt;Route path='/admin/migration' element={&lt;SchemaMigrationPage /&gt;} /&gt;
-      &lt;Route path='/admin/dashboard' element={&lt;AdminDashboard /&gt;} /&gt;
+      &lt;Route path='/admin/migration' element={isAdmin(user) ? &lt;SchemaMigrationPage /&gt; : &lt;Navigate to="/" /&gt;} /&gt;
+      &lt;Route path='/admin/dashboard' element={isAdmin(user) ? &lt;AdminDashboard /&gt; : &lt;Navigate to="/" /&gt;} /&gt;
+      &lt;Route path='/admin/featured-collections' element={isAdmin(user) ? &lt;ManageFeaturedCollections /&gt; : &lt;Navigate to="/" /&gt;} /&gt;
       &lt;Route path='/playlist/:id' element={&lt;PlaylistDetailPage /&gt;} /&gt;
       &lt;Route path="/user/:userId" element={&lt;UserProfilePage /&gt;} /&gt;
     &lt;/Routes&gt;
@@ -319,7 +325,7 @@ export default App</pre></td></tr></table></pre>
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-15T15:46:19.896Z
+                at 2025-05-19T18:00:12.434Z
             </div>
         <script src="../prettify.js"></script>
         <script>
