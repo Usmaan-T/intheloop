@@ -47,9 +47,6 @@ const useDeleteSample = () => {
       // 2. Delete audio file from Storage if URL exists
       if (audioUrl) {
         try {
-          // Extract the storage path from the URL
-          // The URL format is typically https://firebasestorage.googleapis.com/v0/b/[PROJECT_ID].appspot.com/o/[FILE_PATH]?[PARAMS]
-          // We need to extract just the [FILE_PATH] part and decode it
           const audioUrlObj = new URL(audioUrl);
           const pathWithQueryString = audioUrlObj.pathname.split('/o/')[1];
           if (pathWithQueryString) {
@@ -63,14 +60,12 @@ const useDeleteSample = () => {
           }
         } catch (audioError) {
           console.error("Error deleting audio file:", audioError);
-          // Continue execution - we still want to delete the image if possible
         }
       }
 
       // 3. Delete image file from Storage if URL exists
       if (imageUrl) {
         try {
-          // Extract the storage path using the same logic as for audio
           const imageUrlObj = new URL(imageUrl);
           const pathWithQueryString = imageUrlObj.pathname.split('/o/')[1];
           if (pathWithQueryString) {

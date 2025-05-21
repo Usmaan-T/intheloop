@@ -30,7 +30,7 @@ const useExploreData = (initialLimit = 10) => {
     if (!userId) return {};
     
     try {
-      // Get user document to analyze likes
+      // Get user document to analyse likes
       const userDoc = await getDocs(query(collection(firestore, 'users'), where('__name__', '==', userId)));
       
       if (userDoc.empty) {
@@ -40,7 +40,7 @@ const useExploreData = (initialLimit = 10) => {
       const userData = userDoc.docs[0].data();
       const userLikes = userData.likes || [];
       
-      // Fetch user's liked samples to analyze their tags
+      // Fetch user's liked samples to analyse their tags
       const tagCounts = {};
       let totalInteractions = 0;
       
@@ -362,14 +362,14 @@ const useExploreData = (initialLimit = 10) => {
     }
   }, [user, fetchPersonalizedSamples]);
 
-  // Modified fetchMoreSamples to add personalization or randomization
+  // Modified fetchMoreSamples to add personalisation or randomisation
   const fetchMoreSamples = async () => {
     if (!hasMore) return;
     
     setLoading(true);
     try {
       if (user) {
-        // For logged-in users, fetch more personalized samples
+        // For logged-in users, fetch more personalised samples
         // This is simplified; in a real app, you might want more sophisticated pagination
         setRefreshCounter(prev => prev + 1);
         await fetchPersonalizedSamples();

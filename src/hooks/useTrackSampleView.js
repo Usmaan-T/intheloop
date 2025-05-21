@@ -46,7 +46,6 @@ const useTrackSampleView = (sampleId) => {
     
     trackView();
     
-    // Cleanup function not needed, view is tracked only once
   }, [sampleId, user]);
   
   return { hasTrackedView };

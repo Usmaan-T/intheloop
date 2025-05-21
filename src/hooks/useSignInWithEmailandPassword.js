@@ -19,7 +19,6 @@ const useSignInWithEmailAndPasswordHook = () => {
     try {
       const signedInUser = await signInWithEmailAndPasswordFn(inputs.email, inputs.password);
       if (signedInUser) {
-        // Optionally, you might store user data in local storage
         localStorage.setItem("user-info", JSON.stringify(signedInUser.user));
       }
     } catch (error) {
