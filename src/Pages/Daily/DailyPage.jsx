@@ -56,6 +56,44 @@ const DailyPage = () => {
   // Reference to the daily sample document
   const dailySampleRef = doc(firestore, 'dailySamples', dateString);
   const [dailySampleDoc, loading, error] = useDocument(dailySampleRef);
+  
+  // Fallback sample for when no sample is found for the day
+  const fallbackSample = {
+    sample: {
+      id: 'fallback-sample-id',
+      name: 'Atmospheric Lofi Beat',
+      userId: 'fallback-user-id',
+      audioUrl: 'https://cdn.freesound.org/previews/563/563771_12517091-lq.mp3',
+      coverImage: 'https://images.unsplash.com/photo-1571330735066-03aaa9429d89?q=80&w=2070&auto=format&fit=crop',
+      createdAt: { toDate: () => targetDate },
+      bpm: '85',
+      key: 'Cm',
+      genre: 'Lo-Fi',
+      instrument: 'Piano',
+      description: 'A relaxing atmospheric lofi beat with smooth piano melodies, perfect for studying or chilling.',
+      tags: ['Lo-Fi', 'Chill', 'Piano', 'Beat', 'Atmospheric'],
+      stats: {
+        likes: 243,
+        downloads: 108,
+        views: 562
+      },
+      popularityScores: {
+        allTime: 425
+      }
+    },
+    score: 425,
+    date: targetDate
+  };
+
+  // Fallback creator for when no creator is found
+  const fallbackCreator = {
+    username: 'MusicMaestro',
+    displayName: 'Music Maestro',
+    photoURL: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=1000&auto=format&fit=crop',
+    bio: 'Producer of chill beats and atmospheric melodies',
+    followers: 1289,
+    uid: 'fallback-user-id'
+  };
 
   // Animation variants
   const containerVariants = {
@@ -88,6 +126,9 @@ const DailyPage = () => {
           const userDoc = await getDoc(userDocRef);
           if (userDoc.exists()) {
             setCreator(userDoc.data());
+          } else if (sampleData.userId === 'fallback-user-id') {
+            // Use fallback creator for our fallback sample
+            setCreator(fallbackCreator);
           }
         } catch (err) {
           console.error('Error fetching creator info:', err);
@@ -98,6 +139,10 @@ const DailyPage = () => {
             duration: 5000,
             isClosable: true,
           });
+          // Use fallback creator on error if we're using the fallback sample
+          if (sampleData.userId === 'fallback-user-id') {
+            setCreator(fallbackCreator);
+          }
         }
       }
     };
@@ -549,7 +594,9 @@ const DailyPage = () => {
       );
     }
 
-    const sampleData = dailySampleDoc?.data() || selectedSample;
+    // Use the daily sample if it exists, then the selected sample, then fall back to our default
+    const sampleData = dailySampleDoc?.exists() ? dailySampleDoc?.data() : 
+                       selectedSample ? selectedSample : fallbackSample;
 
     return (
       <MotionFlex

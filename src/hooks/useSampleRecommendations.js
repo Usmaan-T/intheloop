@@ -157,8 +157,6 @@ const useSampleRecommendations = (limitCount = 10) => {
       // Create exclude IDs list
       const excludeIds = [...likedSampleIds];
       
-      // If refreshing, make sure to exclude current recommendations for more variety
-      // But with 25% chance, allow some current recommendations to remain for continuity
       const shouldAllowSomeRepeats = Math.random() < 0.25;
       if (!shouldAllowSomeRepeats && currentRecommendationIds.length > 0) {
         excludeIds.push(...currentRecommendationIds);

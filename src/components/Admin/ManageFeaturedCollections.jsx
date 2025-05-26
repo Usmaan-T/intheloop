@@ -122,8 +122,6 @@ const ManageFeaturedCollections = () => {
     }
 
     try {
-      // We'll use a simple query to fetch playlists that potentially match the search term
-      // In a real app, you might want to implement a more sophisticated search with Algolia or similar
       const playlistsQuery = query(
         collection(firestore, 'playlists'),
         limit(20)

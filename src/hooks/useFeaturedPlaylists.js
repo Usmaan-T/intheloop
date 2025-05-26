@@ -51,8 +51,6 @@ export const useFeaturedPlaylists = (limitCount = 10) => {
           const additionalPlaylistsQuery = query(
             collection(firestore, 'playlists'),
             where('privacy', '==', 'public'),
-            // Using 'not-in' requires an index, but useful to avoid duplicates
-            // where('__name__', 'not-in', fetchedIds), // Uncomment if index is created
             orderBy('createdAt', 'desc'),
             limit(limitCount)
           );

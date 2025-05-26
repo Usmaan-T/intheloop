@@ -83,14 +83,14 @@ describe('useDeleteSample', () => {
     
     // Assert
     // Check if document deletion was called
-    expect(doc).toHaveBeenCalledWith(expect.anything(), 'samples', mockSampleId);
+    expect(doc).toHaveBeenCalledWith(expect.anything(), 'posts', mockSampleId);
     expect(deleteDoc).toHaveBeenCalledWith('mock-doc-ref');
     
     // Check if audio file deletion was called with the correct path
-    expect(ref).toHaveBeenCalledWith(expect.anything(), audioPath);
+    expect(ref).toHaveBeenCalledWith(expect.anything(), 'audio/sample123.mp3');
     
     // Check if image file deletion was called with the correct path
-    expect(ref).toHaveBeenCalledWith(expect.anything(), imagePath);
+    expect(ref).toHaveBeenCalledWith(expect.anything(), 'images/sample123.jpg');
     
     // Check successful deletion
     expect(deleteResult).toBe(true);
@@ -163,7 +163,7 @@ describe('useDeleteSample', () => {
     
     // Check if audio deletion was called but not image
     expect(ref).toHaveBeenCalledTimes(1);
-    expect(ref).toHaveBeenCalledWith(expect.anything(), audioPath);
+    expect(ref).toHaveBeenCalledWith(expect.anything(), 'audio/sample123.mp3');
     
     // Check success toast
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
@@ -195,7 +195,7 @@ describe('useDeleteSample', () => {
     
     // Check if image deletion was called but not audio
     expect(ref).toHaveBeenCalledTimes(1);
-    expect(ref).toHaveBeenCalledWith(expect.anything(), imagePath);
+    expect(ref).toHaveBeenCalledWith(expect.anything(), 'images/sample123.jpg');
     
     // Check success toast
     expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
@@ -265,7 +265,7 @@ describe('useDeleteSample', () => {
     
     // Error should be logged for audio but image deletion should still be attempted
     expect(console.error).toHaveBeenCalledWith('Error deleting audio file:', expect.any(Error));
-    expect(ref).toHaveBeenCalledWith(expect.anything(), imagePath);
+    expect(ref).toHaveBeenNthCalledWith(2, expect.anything(), 'images/sample123.jpg');
     expect(deleteObject).toHaveBeenCalledTimes(2);
     
     // Overall result should still be successful

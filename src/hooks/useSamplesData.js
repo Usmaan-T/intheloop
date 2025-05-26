@@ -284,13 +284,11 @@ const useSamplesData = (pageSize = 10, initialSearchTerm = '', initialTags = [],
         // Update state based on filtered results
         const hasMoreResults = fetchedSamples.length > pageSize;
         setHasMore(hasMoreResults);
-        
-        // If we're using client-side filtering and have few results, don't use lastVisible
-        // so next query will start fresh
+
+
         if (selectedTags.length === 0 || fetchedSamples.length >= pageSize) {
           setLastVisible(samplesSnapshot.docs[samplesSnapshot.docs.length - 1]);
         } else {
-          // For heavily filtered results with few matches, don't set lastVisible
           setLastVisible(null);
         }
         
@@ -357,7 +355,7 @@ const useSamplesData = (pageSize = 10, initialSearchTerm = '', initialTags = [],
     }
   };
 
-  // Initialize popularity scores for samples that don't have them
+  // Initialise popularity scores for samples that don't have them
   const initializePopularityScores = async () => {
     console.log("Initializing popularity scores for samples");
     try {
